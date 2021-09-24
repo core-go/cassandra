@@ -1,20 +1,11 @@
 package cassandra
 
 import (
-	"fmt"
 	"reflect"
 	"strconv"
 	"strings"
 )
 
-type BatchStatement struct {
-	Query         string
-	Values        []interface{}
-	Keys          []string
-	Columns       []string
-	Attributes    map[string]interface{}
-	AttributeKeys map[string]interface{}
-}
 type FieldDB struct {
 	JSON   string
 	Column string
@@ -22,19 +13,41 @@ type FieldDB struct {
 	Index  int
 	Key    bool
 	Update bool
+	Insert bool
 	True   *string
 	False  *string
 }
+type Schema struct {
+	Keys    []string
+	Columns []string
+	Fields  map[string]FieldDB
+}
+func CreateSchema(modelType reflect.Type) *Schema {
+	cols, keys, schema := MakeSchema(modelType)
+	s := &Schema{Columns: cols, Keys: keys, Fields: schema}
+	return s
+}
 func MakeSchema(modelType reflect.Type) ([]string, []string, map[string]FieldDB) {
-	numField := modelType.NumField()
+	numField := 0
+	if modelType.Kind() == reflect.Ptr {
+		numField = modelType.Elem().NumField()
+	} else {
+		numField = modelType.NumField()
+	}
 	columns := make([]string, 0)
 	keys := make([]string, 0)
 	schema := make(map[string]FieldDB, 0)
 	for idx := 0; idx < numField; idx++ {
-		field := modelType.Field(idx)
+		var field reflect.StructField
+		if modelType.Kind() == reflect.Ptr {
+			field = modelType.Elem().Field(idx)
+		} else {
+			field = modelType.Field(idx)
+		}
 		tag, _ := field.Tag.Lookup("gorm")
 		if !strings.Contains(tag, IgnoreReadWrite) {
 			update := !strings.Contains(tag, "update:false")
+			insert := !strings.Contains(tag, "insert:false")
 			if has := strings.Contains(tag, "column"); has {
 				json := field.Name
 				col := json
@@ -62,6 +75,7 @@ func MakeSchema(modelType reflect.Type) ([]string, []string, map[string]FieldDB)
 								Index:  idx,
 								Key:    isKey,
 								Update: update,
+								Insert: insert,
 							}
 							tTag, tOk := field.Tag.Lookup("true")
 							if tOk {
@@ -80,30 +94,20 @@ func MakeSchema(modelType reflect.Type) ([]string, []string, map[string]FieldDB)
 	}
 	return columns, keys, schema
 }
-func Find(slice []string, val string) (int, bool) {
-	for i, item := range slice {
-		if item == val {
-			return i, true
-		}
-	}
-	return -1, false
-}
-func QuoteColumnName(str string) string {
-	//if strings.Contains(str, ".") {
-	//	var newStrs []string
-	//	for _, str := range strings.Split(str, ".") {
-	//		newStrs = append(newStrs, str)
-	//	}
-	//	return strings.Join(newStrs, ".")
-	//}
-	return str
-}
 func GetDBValue(v interface{}) (string, bool) {
 	switch v.(type) {
 	case string:
 		s0 := v.(string)
 		if len(s0) == 0 {
 			return "''", true
+		}
+		return "", false
+	case bool:
+		b0 := v.(bool)
+		if b0 {
+			return "true", true
+		} else {
+			return "false", true
 		}
 		return "", false
 	case int:
@@ -115,160 +119,4 @@ func GetDBValue(v interface{}) (string, bool) {
 	default:
 		return "", false
 	}
-}
-func setValue(model interface{}, index int, value interface{}) (interface{}, error) {
-	valueObject := reflect.Indirect(reflect.ValueOf(model))
-	switch reflect.ValueOf(model).Kind() {
-	case reflect.Ptr:
-		{
-			valueObject.Field(index).Set(reflect.ValueOf(value))
-			return model, nil
-		}
-	default:
-		if modelWithTypeValue, ok := model.(reflect.Value); ok {
-			_, err := setValueWithTypeValue(modelWithTypeValue, index, value)
-			return modelWithTypeValue.Interface(), err
-		}
-	}
-	return model, nil
-}
-func setValueWithTypeValue(model reflect.Value, index int, value interface{}) (reflect.Value, error) {
-	trueValue := reflect.Indirect(model)
-	switch trueValue.Kind() {
-	case reflect.Struct:
-		{
-			val := reflect.Indirect(reflect.ValueOf(value))
-			if trueValue.Field(index).Kind() == val.Kind() {
-				trueValue.Field(index).Set(reflect.ValueOf(value))
-				return trueValue, nil
-			} else {
-				return trueValue, fmt.Errorf("value's kind must same as field's kind")
-			}
-		}
-	default:
-		return trueValue, nil
-	}
-}
-func BuildMapDataAndKeys(model interface{}, update bool) (map[string]interface{}, map[string]interface{}, []string, []string) {
-	var mapData = make(map[string]interface{})
-	var mapKey = make(map[string]interface{})
-	keys := make([]string, 0)
-	columns := make([]string, 0)
-	mv := reflect.Indirect(reflect.ValueOf(model))
-	modelType := mv.Type()
-	numField := modelType.NumField()
-	for i := 0; i < numField; i++ {
-		if colName, isKey, exist := CheckByIndex(modelType, i, update); exist {
-			f := mv.Field(i)
-			fieldValue := f.Interface()
-			isNil := false
-			if f.Kind() == reflect.Ptr {
-				if reflect.ValueOf(fieldValue).IsNil() {
-					isNil = true
-				} else {
-					fieldValue = reflect.Indirect(reflect.ValueOf(fieldValue)).Interface()
-				}
-			}
-			if isKey {
-				columns = append(columns, colName)
-				if !isNil {
-					mapKey[colName] = fieldValue
-				}
-			} else {
-				keys = append(keys, colName)
-				if !isNil {
-					if boolValue, ok := fieldValue.(bool); ok {
-						valueS, okS := modelType.Field(i).Tag.Lookup(strconv.FormatBool(boolValue))
-						if okS {
-							mapData[colName] = valueS
-						} else {
-							mapData[colName] = boolValue
-						}
-					} else {
-						mapData[colName] = fieldValue
-					}
-				}
-			}
-		}
-	}
-	return mapData, mapKey, keys, columns
-}
-func CheckByIndex(modelType reflect.Type, index int, update bool) (col string, isKey bool, colExist bool) {
-	field := modelType.Field(index)
-	tag, _ := field.Tag.Lookup("gorm")
-	if strings.Contains(tag, IgnoreReadWrite) {
-		return "", false, false
-	}
-	if update {
-		if strings.Contains(tag, "update:false") {
-			return "", false, false
-		}
-	}
-	if has := strings.Contains(tag, "column"); has {
-		str1 := strings.Split(tag, ";")
-		num := len(str1)
-		for i := 0; i < num; i++ {
-			str2 := strings.Split(str1[i], ":")
-			for j := 0; j < len(str2); j++ {
-				if str2[j] == "column" {
-					isKey := strings.Contains(tag, "primary_key")
-					return str2[j+1], isKey, true
-				}
-			}
-		}
-	}
-	return "", false, false
-}
-func BuildParamWithNull(colName string) string {
-	return QuoteColumnName(colName) + "=null"
-}
-func GetColumnNameByIndex(ModelType reflect.Type, index int) (col string, colExist bool) {
-	fields := ModelType.Field(index)
-	tag, _ := fields.Tag.Lookup("gorm")
-
-	if has := strings.Contains(tag, "column"); has {
-		str1 := strings.Split(tag, ";")
-		num := len(str1)
-		for i := 0; i < num; i++ {
-			str2 := strings.Split(str1[i], ":")
-			for j := 0; j < len(str2); j++ {
-				if str2[j] == "column" {
-					return str2[j+1], true
-				}
-			}
-		}
-	}
-	return "", false
-}
-func BuildSqlParametersAndValues(columns []string, values []interface{}, n *int, start int, joinStr string, buildParam func(int) string) (string, []interface{}, error) {
-	arr := make([]string, *n)
-	j := start
-	var valueParams []interface{}
-	for i, _ := range arr {
-		columnName := columns[i]
-		if values[j] == nil {
-			arr[i] = BuildParamWithNull(columnName)
-			copy(values[i:], values[i+1:])
-			values[len(values)-1] = ""
-			values = values[:len(values)-1]
-			*n--
-		} else {
-			arr[i] = fmt.Sprintf("%s = %s", columnName, BuildParametersFrom(j, 1, buildParam))
-			valueParams = append(valueParams, values[j])
-		}
-		j++
-	}
-	return strings.Join(arr, joinStr), valueParams, nil
-}
-func BuildParametersFrom(i int, numCol int, buildParam func(int) string) string {
-	var arrValue []string
-	for j := 0; j < numCol; j++ {
-		arrValue = append(arrValue, buildParam(i+j+1))
-	}
-	return strings.Join(arrValue, ",")
-}
-func statement() BatchStatement {
-	attributes := make(map[string]interface{})
-	attributeKeys := make(map[string]interface{})
-	return BatchStatement{Keys: []string{}, Columns: []string{}, Attributes: attributes, AttributeKeys: attributeKeys}
 }
