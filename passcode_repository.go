@@ -9,7 +9,7 @@ import (
 	"github.com/gocql/gocql"
 )
 
-type PasscodeService struct {
+type PasscodeRepository struct {
 	db            *gocql.ClusterConfig
 	tableName     string
 	idName        string
@@ -17,7 +17,7 @@ type PasscodeService struct {
 	expiredAtName string
 }
 
-func NewPasscodeRepository(db *gocql.ClusterConfig, tableName string, options ...string) *PasscodeService {
+func NewPasscodeRepository(db *gocql.ClusterConfig, tableName string, options ...string) *PasscodeRepository {
 	var idName, passcodeName, expiredAtName string
 	if len(options) >= 1 && len(options[0]) > 0 {
 		expiredAtName = options[0]
@@ -34,7 +34,7 @@ func NewPasscodeRepository(db *gocql.ClusterConfig, tableName string, options ..
 	} else {
 		passcodeName = "passcode"
 	}
-	return &PasscodeService{
+	return &PasscodeRepository{
 		db:            db,
 		tableName:     strings.ToLower(tableName),
 		idName:        strings.ToLower(idName),
@@ -43,7 +43,7 @@ func NewPasscodeRepository(db *gocql.ClusterConfig, tableName string, options ..
 	}
 }
 
-func (p *PasscodeService) Save(ctx context.Context, id string, passcode string, expiredAt time.Time) (int64, error) {
+func (p *PasscodeRepository) Save(ctx context.Context, id string, passcode string, expiredAt time.Time) (int64, error) {
 	session, er0 := p.db.CreateSession()
 	columns := []string{p.idName, p.passcodeName, p.expiredAtName}
 	if er0 != nil {
@@ -62,7 +62,7 @@ func (p *PasscodeService) Save(ctx context.Context, id string, passcode string, 
 	return 1, nil
 }
 
-func (p *PasscodeService) Load(ctx context.Context, id string) (string, time.Time, error) {
+func (p *PasscodeRepository) Load(ctx context.Context, id string) (string, time.Time, error) {
 	session, er0 := p.db.CreateSession()
 	// var returnId strng
 	var code string
@@ -78,7 +78,7 @@ func (p *PasscodeService) Load(ctx context.Context, id string) (string, time.Tim
 	return code, expiredAt, nil
 }
 
-func (p *PasscodeService) Delete(ctx context.Context, id string) (int64, error) {
+func (p *PasscodeRepository) Delete(ctx context.Context, id string) (int64, error) {
 	session, er0 := p.db.CreateSession()
 	if er0 != nil {
 		return 0, er0
