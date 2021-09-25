@@ -7,13 +7,13 @@ import (
 func BuildParam(i int) string {
 	return "?"
 }
-func BuildInsertBatch(table string, models interface{}, options...*Schema) ([]Statement, error) {
-	return BuildInsertBatchWithVersion(table, models, -1, false, options...)
+func BuildToInsertBatch(table string, models interface{}, options...*Schema) ([]Statement, error) {
+	return BuildToInsertBatchWithVersion(table, models, -1, false, options...)
 }
-func BuildInsertOrUpdateBatch(table string, models interface{}, orUpdate bool, options...*Schema) ([]Statement, error) {
-	return BuildInsertBatchWithVersion(table, models, -1, orUpdate, options...)
+func BuildToInsertOrUpdateBatch(table string, models interface{}, orUpdate bool, options...*Schema) ([]Statement, error) {
+	return BuildToInsertBatchWithVersion(table, models, -1, orUpdate, options...)
 }
-func BuildInsertBatchWithVersion(table string, models interface{}, versionIndex int, orUpdate bool, options...*Schema) ([]Statement, error) {
+func BuildToInsertBatchWithVersion(table string, models interface{}, versionIndex int, orUpdate bool, options...*Schema) ([]Statement, error) {
 	s := reflect.Indirect(reflect.ValueOf(models))
 	if s.Kind() != reflect.Slice {
 		return nil, fmt.Errorf("models is not a slice")

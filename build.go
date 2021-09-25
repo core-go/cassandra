@@ -12,8 +12,8 @@ const IgnoreReadWrite = "-"
 func BuildToInsert(table string, model interface{}, options ...*Schema) (string, []interface{}) {
 	return BuildToInsertWithVersion(table, model, -1, false, options...)
 }
-func BuildToSave(table string, model interface{}, orUpdate bool, options ...*Schema) (string, []interface{}) {
-	return BuildToInsertWithVersion(table, model, -1, orUpdate, options...)
+func BuildToSave(table string, model interface{}, options ...*Schema) (string, []interface{}) {
+	return BuildToInsertWithVersion(table, model, -1, true, options...)
 }
 func BuildToInsertWithVersion(table string, model interface{}, versionIndex int, orUpdate bool, options ...*Schema) (string, []interface{}) {
 	buildParam := BuildParam

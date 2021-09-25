@@ -14,8 +14,6 @@ type FieldDB struct {
 	Key    bool
 	Update bool
 	Insert bool
-	True   *string
-	False  *string
 }
 type Schema struct {
 	Keys    []string
@@ -76,14 +74,6 @@ func MakeSchema(modelType reflect.Type) ([]string, []string, map[string]FieldDB)
 								Key:    isKey,
 								Update: update,
 								Insert: insert,
-							}
-							tTag, tOk := field.Tag.Lookup("true")
-							if tOk {
-								f.True = &tTag
-								fTag, fOk := field.Tag.Lookup("false")
-								if fOk {
-									f.False = &fTag
-								}
 							}
 							schema[col] = f
 						}
