@@ -109,7 +109,6 @@ func GetDBValue(v interface{}) (string, bool) {
 		} else {
 			return "false", true
 		}
-		return "", false
 	case int:
 		return strconv.Itoa(v.(int)), true
 	case int64:
