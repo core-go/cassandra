@@ -4,6 +4,16 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
+	"time"
+)
+const (
+	t1 = "2006-01-02T15:04:05Z"
+	t2 = "2006-01-02T15:04:05-0700"
+	t3 = "2006-01-02T15:04:05.0000000-0700"
+
+	l1 = len(t1)
+	l2 = len(t2)
+	l3 = len(t3)
 )
 
 type FieldDB struct {
@@ -26,22 +36,16 @@ func CreateSchema(modelType reflect.Type) *Schema {
 	return s
 }
 func MakeSchema(modelType reflect.Type) ([]string, []string, map[string]FieldDB) {
-	numField := 0
-	if modelType.Kind() == reflect.Ptr {
-		numField = modelType.Elem().NumField()
-	} else {
-		numField = modelType.NumField()
+	m := modelType
+	if m.Kind() == reflect.Ptr {
+		m = m.Elem()
 	}
+	numField := m.NumField()
 	columns := make([]string, 0)
 	keys := make([]string, 0)
 	schema := make(map[string]FieldDB, 0)
 	for idx := 0; idx < numField; idx++ {
-		var field reflect.StructField
-		if modelType.Kind() == reflect.Ptr {
-			field = modelType.Elem().Field(idx)
-		} else {
-			field = modelType.Field(idx)
-		}
+		field := m.Field(idx)
 		tag, _ := field.Tag.Lookup("gorm")
 		if !strings.Contains(tag, IgnoreReadWrite) {
 			update := !strings.Contains(tag, "update:false")
@@ -108,4 +112,39 @@ func GetDBValue(v interface{}) (string, bool) {
 	default:
 		return "", false
 	}
+}
+func ParseDates(args []interface{}, dates []int) []interface{} {
+	if args == nil || len(args) == 0 {
+		return nil
+	}
+	if dates == nil || len(dates) == 0 {
+		return args
+	}
+	res := append([]interface{}{}, args...)
+	for _, d := range dates {
+		if d >= len(args) {
+			break
+		}
+		a := args[d]
+		if s, ok := a.(string); ok {
+			switch len(s) {
+			case l1:
+				t, err := time.Parse(t1, s)
+				if err == nil {
+					res[d] = t
+				}
+			case l2:
+				t, err := time.Parse(t2, s)
+				if err == nil {
+					res[d] = t
+				}
+			case l3:
+				t, err := time.Parse(t3, s)
+				if err == nil {
+					res[d] = t
+				}
+			}
+		}
+	}
+	return res
 }
