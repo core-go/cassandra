@@ -7,15 +7,10 @@ import (
 	"strings"
 )
 
-func ScanIter(iter *gocql.Iter, results interface{}) error {
+func ScanIter(iter *gocql.Iter, results interface{}, options...map[string]int) error {
 	modelType := reflect.TypeOf(results).Elem().Elem()
 
-	fieldsIndex, er1 := GetColumnIndexes(modelType)
-	if er1 != nil {
-		return er1
-	}
-
-	tb, er2 := Scans(iter, modelType, fieldsIndex)
+	tb, er2 := Scan(iter, modelType, options...)
 	if er2 != nil {
 		return er2
 	}
@@ -66,7 +61,16 @@ func FindTag(tag string, key string) (string, bool) {
 	}
 	return "", false
 }
-func Scans(iter *gocql.Iter, modelType reflect.Type, fieldsIndex map[string]int) (t []interface{}, err error) {
+func Scan(iter *gocql.Iter, modelType reflect.Type, options...map[string]int) (t []interface{}, err error) {
+	var fieldsIndex map[string]int
+	if len(options) > 0 && options[0] != nil {
+		fieldsIndex = options[0]
+	} else {
+		fieldsIndex, err = GetColumnIndexes(modelType)
+	}
+	if err != nil {
+		return
+	}
 	columns := GetColumns(iter.Columns())
 	for {
 		initModel := reflect.New(modelType).Interface()

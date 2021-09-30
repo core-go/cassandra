@@ -21,20 +21,24 @@ func QueryMap(ses *gocql.Session, sql string, values ...interface{}) ([]map[stri
 		}
 	}
 }
-func Query(ses *gocql.Session, results interface{}, sql string, values ...interface{}) error {
+func Query(ses *gocql.Session, fieldsIndex map[string]int, results interface{}, sql string, values ...interface{}) error {
 	q := ses.Query(sql, values...)
 	if q.Exec() != nil {
 		return q.Exec()
 	}
-	return ScanIter(q.Iter(), results)
+	return ScanIter(q.Iter(), results, fieldsIndex)
 }
-func QueryWithPage(ses *gocql.Session, max int, nextPageToken string, results interface{}, sql string, values ...interface{}) (string, error) {
+func QueryWithPage(ses *gocql.Session, fieldsIndex map[string]int, results interface{}, sql string, values []interface{}, max int, options...string) (string, error) {
+	nextPageToken := ""
+	if len(options) > 0 && len(options[0]) > 0 {
+		nextPageToken = options[0]
+	}
 	if len(nextPageToken) == 0 {
 		query := ses.Query(sql, values...).PageSize(max)
 		if query.Exec() != nil {
 			return "", query.Exec()
 		}
-		err := ScanIter(query.Iter(), results)
+		err := ScanIter(query.Iter(), results, fieldsIndex)
 		if err != nil {
 			return "", err
 		}
