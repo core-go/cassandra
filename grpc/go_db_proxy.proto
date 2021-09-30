@@ -1,0 +1,50 @@
+syntax = "proto3";
+
+package query;
+
+option go_package = "core-go/cassandra/grpc/;grpc";
+
+message Request {
+  string query = 1;
+  bytes params = 2;
+  repeated int32 dates = 3;
+  string tx = 4;
+  string commit = 5;
+}
+
+message BatchRequest {
+  repeated Request batch = 1;
+  string tx = 2;
+  string commit = 3;
+  string master = 4;
+}
+
+message Response {
+  int64 result = 1;
+}
+
+message QueryResponse {
+  string message = 1;
+}
+
+message BeginTransactionRequest {
+  int64 timeout = 1;
+}
+
+message BeginTransactionResponse {
+  string id = 1;
+}
+
+message EndTransactionRequest {
+  string tx = 1;
+  string rollback = 2;
+}
+
+// Define service
+service DbProxy {
+  rpc Query (Request) returns (QueryResponse) {}
+  rpc Execute (Request) returns (Response) {}
+  rpc ExecBatch (BatchRequest) returns (Response) {}
+  rpc BeginTransaction (BeginTransactionRequest) returns (BeginTransactionResponse) {}
+  rpc EndTransaction (EndTransactionRequest) returns (QueryResponse) {}
+}
