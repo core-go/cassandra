@@ -2,6 +2,7 @@ package cassandra
 
 import (
 	"encoding/hex"
+
 	"github.com/gocql/gocql"
 )
 
@@ -28,36 +29,23 @@ func Query(ses *gocql.Session, fieldsIndex map[string]int, results interface{}, 
 	}
 	return ScanIter(q.Iter(), results, fieldsIndex)
 }
-func QueryWithPage(ses *gocql.Session, fieldsIndex map[string]int, results interface{}, sql string, values []interface{}, max int, options...string) (string, error) {
+func QueryWithPage(ses *gocql.Session, fieldsIndex map[string]int, results interface{}, sql string, values []interface{}, max int, options ...string) (string, error) {
 	nextPageToken := ""
 	if len(options) > 0 && len(options[0]) > 0 {
 		nextPageToken = options[0]
 	}
-	if len(nextPageToken) == 0 {
-		query := ses.Query(sql, values...).PageSize(max)
-		if query.Exec() != nil {
-			return "", query.Exec()
-		}
-		err := ScanIter(query.Iter(), results, fieldsIndex)
-		if err != nil {
-			return "", err
-		}
-		nextPageToken := hex.EncodeToString(query.Iter().PageState())
-		return nextPageToken, nil
-	} else {
-		next, er0 := hex.DecodeString(nextPageToken)
-		if er0 != nil {
-			return "", er0
-		}
-		query := ses.Query(sql, values...).PageState(next).PageSize(max)
-		if query.Exec() != nil {
-			return "", query.Exec()
-		}
-		err := ScanIter(query.Iter(), results)
-		if err != nil {
-			return "", err
-		}
-		nextPageToken := hex.EncodeToString(query.Iter().PageState())
-		return nextPageToken, nil
+	next, er0 := hex.DecodeString(nextPageToken)
+	if er0 != nil {
+		return "", er0
 	}
+	query := ses.Query(sql, values...).PageState(next).PageSize(max)
+	if query.Exec() != nil {
+		return "", query.Exec()
+	}
+	err := ScanIter(query.Iter(), results)
+	if err != nil {
+		return "", err
+	}
+	nextPageToken = hex.EncodeToString(query.Iter().PageState())
+	return nextPageToken, nil
 }
