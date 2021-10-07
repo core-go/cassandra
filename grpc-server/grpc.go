@@ -11,15 +11,13 @@ import (
 
 type GRPCHandler struct {
 	grpc.DbProxyServer
-	Session *gocql.Session
-	Error   func(context.Context, string)
+	Session   *gocql.Session
+	Transform func(s string) string
+	Error     func(context.Context, string)
 }
 
-func NewHandler(db *gocql.Session, err func(context.Context, string)) *GRPCHandler {
-	g := GRPCHandler{
-		Session: db,
-		Error:   err,
-	}
+func NewHandler(db *gocql.Session, transform func(s string) string, logError func(context.Context, string)) *GRPCHandler {
+	g := GRPCHandler{ Session: db, Transform: transform, Error: logError }
 	return &g
 }
 
@@ -55,7 +53,7 @@ func (s *GRPCHandler) Query(ctx context.Context, in *grpc.Request) (*grpc.QueryR
 		statement.Dates = append(statement.Dates, int(v))
 	}
 	statement.Params = c.ParseDates(statement.Params, statement.Dates)
-	res, err := c.QueryMap(s.Session, statement.Query, statement.Params...)
+	res, err := c.QueryMap(s.Session, s.Transform, statement.Query, statement.Params...)
 	data := new(bytes.Buffer)
 	err = json.NewEncoder(data).Encode(&res)
 	if err != nil {

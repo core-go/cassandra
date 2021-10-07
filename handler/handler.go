@@ -3,22 +3,24 @@ package handler
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	c "github.com/core-go/cassandra"
 	"github.com/gocql/gocql"
 	"net/http"
 )
 
 type Handler struct {
-	Session *gocql.Session
-	Error   func(context.Context, string)
+	Session   *gocql.Session
+	Transform func(s string) string
+	Error     func(context.Context, string)
 }
 
-func NewHandler(session *gocql.Session, options ...func(context.Context, string)) *Handler {
+func NewHandler(session *gocql.Session, transform func(s string) string, options ...func(context.Context, string)) *Handler {
 	var logError func(context.Context, string)
 	if len(options) >= 1 {
 		logError = options[0]
 	}
-	return &Handler{Session: session, Error: logError}
+	return &Handler{Session: session, Transform: transform, Error: logError}
 }
 
 func (h *Handler) Exec(w http.ResponseWriter, r *http.Request) {
@@ -34,7 +36,7 @@ func (h *Handler) Exec(w http.ResponseWriter, r *http.Request) {
 		handleError(w, r, http.StatusInternalServerError, er1.Error(), h.Error, er1)
 		return
 	}
-	succeed(w, r, http.StatusOK, res)
+	JSON(w, http.StatusOK, res)
 }
 
 func (h *Handler) Query(w http.ResponseWriter, r *http.Request) {
@@ -45,12 +47,12 @@ func (h *Handler) Query(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	s.Params = c.ParseDates(s.Params, s.Dates)
-	res, err := c.QueryMap(h.Session, s.Query, s.Params...)
+	res, err := c.QueryMap(h.Session, h.Transform, s.Query, s.Params...)
 	if err != nil {
 		handleError(w, r, 500, err.Error(), h.Error, err)
 		return
 	}
-	succeed(w, r, http.StatusOK, res)
+	JSON(w, http.StatusOK, res)
 }
 
 func (h *Handler) ExecBatch(w http.ResponseWriter, r *http.Request) {
@@ -73,45 +75,20 @@ func (h *Handler) ExecBatch(w http.ResponseWriter, r *http.Request) {
 		handleError(w, r, 500, err.Error(), h.Error, err)
 		return
 	}
-	succeed(w, r, http.StatusOK, res)
+	JSON(w, http.StatusOK, res)
 }
 
 func handleError(w http.ResponseWriter, r *http.Request, code int, result interface{}, logError func(context.Context, string), err error) {
 	if logError != nil {
 		logError(r.Context(), err.Error())
 	}
-	returnJSON(w, code, result)
+	JSON(w, code, result)
 }
-func succeed(w http.ResponseWriter, r *http.Request, code int, result interface{}) {
-	response, _ := json.Marshal(result)
-	w.Header().Set("Content-Type", "application/json")
+func JSON(w http.ResponseWriter, code int, result interface{}) {
 	w.WriteHeader(code)
-	w.Write(response)
-}
-func returnJSON(w http.ResponseWriter, code int, result interface{}) error {
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(code)
-	if result == nil {
-		w.Write([]byte("null"))
-		return nil
-	}
-	response, err := marshal(result)
+	err := json.NewEncoder(w).Encode(result)
 	if err != nil {
-		// log.Println("cannot marshal of result: " + err.Error())
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return err
+		fmt.Println(err)
 	}
-	w.Write(response)
-	return nil
-}
-func marshal(v interface{}) ([]byte, error) {
-	b, ok1 := v.([]byte)
-	if ok1 {
-		return b, nil
-	}
-	s, ok2 := v.(string)
-	if ok2 {
-		return []byte(s), nil
-	}
-	return json.Marshal(v)
 }

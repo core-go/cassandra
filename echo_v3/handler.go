@@ -10,16 +10,17 @@ import (
 )
 
 type Handler struct {
-	Session *gocql.Session
-	Error   func(context.Context, string)
+	Session   *gocql.Session
+	Transform func(s string) string
+	Error     func(context.Context, string)
 }
 
-func NewHandler(session *gocql.Session, options ...func(context.Context, string)) *Handler {
+func NewHandler(session *gocql.Session, transform func(s string) string, options ...func(context.Context, string)) *Handler {
 	var logError func(context.Context, string)
 	if len(options) >= 1 {
 		logError = options[0]
 	}
-	return &Handler{Session: session, Error: logError}
+	return &Handler{Session: session, Transform: transform, Error: logError}
 }
 
 func (h *Handler) Exec(ctx echo.Context) error {
@@ -48,7 +49,7 @@ func (h *Handler) Query(ctx echo.Context) error {
 		return er0
 	}
 	s.Params = c.ParseDates(s.Params, s.Dates)
-	res, er1 := c.QueryMap(h.Session, s.Query, s.Params...)
+	res, er1 := c.QueryMap(h.Session, h.Transform, s.Query, s.Params...)
 	if er1 != nil {
 		handleError(ctx, http.StatusInternalServerError, er1.Error(), h.Error, er1)
 		return er1
