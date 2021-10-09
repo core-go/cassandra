@@ -4,9 +4,7 @@ import (
 	"fmt"
 	"reflect"
 )
-func BuildParam(i int) string {
-	return "?"
-}
+
 func BuildToInsertBatch(table string, models interface{}, options...*Schema) ([]Statement, error) {
 	return BuildToInsertBatchWithVersion(table, models, -1, false, options...)
 }

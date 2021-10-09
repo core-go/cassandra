@@ -3,7 +3,6 @@ package handler
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	c "github.com/core-go/cassandra"
 	"github.com/gocql/gocql"
 	"net/http"
@@ -78,17 +77,15 @@ func (h *Handler) ExecBatch(w http.ResponseWriter, r *http.Request) {
 	JSON(w, http.StatusOK, res)
 }
 
-func handleError(w http.ResponseWriter, r *http.Request, code int, result interface{}, logError func(context.Context, string), err error) {
+func handleError(w http.ResponseWriter, r *http.Request, code int, result interface{}, logError func(context.Context, string), err error) error {
 	if logError != nil {
 		logError(r.Context(), err.Error())
 	}
-	JSON(w, code, result)
+	return JSON(w, code, result)
 }
-func JSON(w http.ResponseWriter, code int, result interface{}) {
+func JSON(w http.ResponseWriter, code int, result interface{}) error {
 	w.WriteHeader(code)
 	w.Header().Set("Content-Type", "application/json")
 	err := json.NewEncoder(w).Encode(result)
-	if err != nil {
-		fmt.Println(err)
-	}
+	return err
 }

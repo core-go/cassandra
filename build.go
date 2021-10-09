@@ -8,7 +8,9 @@ import (
 )
 
 const IgnoreReadWrite = "-"
-
+func BuildParam(i int) string {
+	return "?"
+}
 func BuildToInsert(table string, model interface{}, options ...*Schema) (string, []interface{}) {
 	return BuildToInsertWithVersion(table, model, -1, false, options...)
 }
