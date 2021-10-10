@@ -7,26 +7,26 @@ import (
 )
 
 type BatchWriter struct {
-	session      *gocql.Session
+	db           *gocql.ClusterConfig
 	tableName    string
 	Map          func(ctx context.Context, model interface{}) (interface{}, error)
 	VersionIndex int
 	Schema       *Schema
 }
-func NewBatchWriter(session *gocql.Session, tableName string, modelType reflect.Type, options ...func(context.Context, interface{}) (interface{}, error)) *BatchWriter {
+func NewBatchWriter(session *gocql.ClusterConfig, tableName string, modelType reflect.Type, options ...func(context.Context, interface{}) (interface{}, error)) *BatchWriter {
 	var mp func(context.Context, interface{}) (interface{}, error)
 	if len(options) > 0 && options[0] != nil {
 		mp = options[0]
 	}
 	return NewBatchWriterWithVersion(session, tableName, modelType, mp)
 }
-func NewBatchWriterWithVersion(session *gocql.Session, tableName string, modelType reflect.Type, mp func(context.Context, interface{}) (interface{}, error), options...int) *BatchWriter {
+func NewBatchWriterWithVersion(session *gocql.ClusterConfig, tableName string, modelType reflect.Type, mp func(context.Context, interface{}) (interface{}, error), options...int) *BatchWriter {
 	versionIndex := -1
 	if len(options) > 0 && options[0] >= 0 {
 		versionIndex = options[0]
 	}
 	schema := CreateSchema(modelType)
-	return &BatchWriter{session: session, tableName: tableName, Schema: schema, VersionIndex: versionIndex, Map: mp}
+	return &BatchWriter{db: session, tableName: tableName, Schema: schema, VersionIndex: versionIndex, Map: mp}
 }
 func (w *BatchWriter) Write(ctx context.Context, models interface{}) ([]int, []int, error) {
 	successIndices := make([]int, 0)
@@ -44,7 +44,11 @@ func (w *BatchWriter) Write(ctx context.Context, models interface{}) ([]int, []i
 	} else {
 		models2 = models
 	}
-	_, err := SaveBatch(ctx, w.session, w.tableName, models2, w.Schema)
+	session, er0 := w.db.CreateSession()
+	if er0 != nil {
+		return successIndices, failIndices, er0
+	}
+	_, err := SaveBatch(ctx, session, w.tableName, models2, w.Schema)
 	s := reflect.ValueOf(models)
 	if err == nil {
 		// Return full success

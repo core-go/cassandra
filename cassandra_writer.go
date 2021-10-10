@@ -7,20 +7,20 @@ import (
 )
 
 type CassandraWriter struct {
-	session      *gocql.Session
+	db           *gocql.ClusterConfig
 	tableName    string
 	Map          func(ctx context.Context, model interface{}) (interface{}, error)
 	schema       *Schema
 	VersionIndex int
 }
 
-func NewCassandraWriter(session *gocql.Session, tableName string, modelType reflect.Type, options ...func(context.Context, interface{}) (interface{}, error)) *CassandraWriter {
+func NewCassandraWriter(session *gocql.ClusterConfig, tableName string, modelType reflect.Type, options ...func(context.Context, interface{}) (interface{}, error)) *CassandraWriter {
 	var mp func(context.Context, interface{}) (interface{}, error)
 	if len(options) >= 1 {
 		mp = options[0]
 	}
 	schema := CreateSchema(modelType)
-	return &CassandraWriter{session: session, tableName: tableName, Map: mp, schema: schema}
+	return &CassandraWriter{db: session, tableName: tableName, Map: mp, schema: schema}
 }
 func (w *CassandraWriter) Write(ctx context.Context, model interface{}) error {
 	if w.Map != nil {
@@ -28,9 +28,17 @@ func (w *CassandraWriter) Write(ctx context.Context, model interface{}) error {
 		if er0 != nil {
 			return er0
 		}
-		_, err := Save(w.session, w.tableName, m2, w.schema)
+		session, er0 := w.db.CreateSession()
+		if er0 != nil {
+			return er0
+		}
+		_, err := Save(session, w.tableName, m2, w.schema)
 		return err
 	}
-	_, err := Save(w.session, w.tableName, model, w.schema)
+	session, er0 := w.db.CreateSession()
+	if er0 != nil {
+		return er0
+	}
+	_, err := Save(session, w.tableName, model, w.schema)
 	return err
 }

@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package query;
 
-option go_package = "core-go/cassandra/grpc/;grpc";
+option go_package = "core-go/sql/grpc/;grpc";
 
 message Request {
   string query = 1;
@@ -43,6 +43,7 @@ message EndTransactionRequest {
 // Define service
 service DbProxy {
   rpc Query (Request) returns (QueryResponse) {}
+  rpc QueryOne (Request) returns (QueryResponse) {}
   rpc Execute (Request) returns (Response) {}
   rpc ExecBatch (BatchRequest) returns (Response) {}
   rpc BeginTransaction (BeginTransactionRequest) returns (BeginTransactionResponse) {}

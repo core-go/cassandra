@@ -7,26 +7,26 @@ import (
 )
 
 type BatchInserter struct {
-	session      *gocql.Session
+	db           *gocql.ClusterConfig
 	tableName    string
 	Map          func(ctx context.Context, model interface{}) (interface{}, error)
 	VersionIndex int
 	Schema       *Schema
 }
-func NewBatchInserter(session *gocql.Session, tableName string, modelType reflect.Type, options ...func(context.Context, interface{}) (interface{}, error)) *BatchInserter {
+func NewBatchInserter(db *gocql.ClusterConfig, tableName string, modelType reflect.Type, options ...func(context.Context, interface{}) (interface{}, error)) *BatchInserter {
 	var mp func(context.Context, interface{}) (interface{}, error)
 	if len(options) > 0 && options[0] != nil {
 		mp = options[0]
 	}
-	return NewBatchInserterWithVersion(session, tableName, modelType, mp)
+	return NewBatchInserterWithVersion(db, tableName, modelType, mp)
 }
-func NewBatchInserterWithVersion(session *gocql.Session, tableName string, modelType reflect.Type, mp func(context.Context, interface{}) (interface{}, error), options...int) *BatchInserter {
+func NewBatchInserterWithVersion(db *gocql.ClusterConfig, tableName string, modelType reflect.Type, mp func(context.Context, interface{}) (interface{}, error), options...int) *BatchInserter {
 	versionIndex := -1
 	if len(options) > 0 && options[0] >= 0 {
 		versionIndex = options[0]
 	}
 	schema := CreateSchema(modelType)
-	return &BatchInserter{session: session, tableName: tableName, Schema: schema, VersionIndex: versionIndex, Map: mp}
+	return &BatchInserter{db: db, tableName: tableName, Schema: schema, VersionIndex: versionIndex, Map: mp}
 }
 func (w *BatchInserter) Write(ctx context.Context, models interface{}) ([]int, []int, error) {
 	successIndices := make([]int, 0)
@@ -44,7 +44,11 @@ func (w *BatchInserter) Write(ctx context.Context, models interface{}) ([]int, [
 	} else {
 		models2 = models
 	}
-	_, err := InsertBatchWithVersion(ctx, w.session, w.tableName, models2, w.VersionIndex, w.Schema)
+	session, er0 := w.db.CreateSession()
+	if er0 != nil {
+		return successIndices, failIndices, er0
+	}
+	_, err := InsertBatchWithVersion(ctx, session, w.tableName, models2, w.VersionIndex, w.Schema)
 	s := reflect.ValueOf(models)
 	if err == nil {
 		// Return full success

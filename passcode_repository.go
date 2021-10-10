@@ -16,7 +16,9 @@ type PasscodeRepository struct {
 	passcodeName  string
 	expiredAtName string
 }
-
+func NewPasscodeAdapter(db *gocql.ClusterConfig, tableName string, options ...string) *PasscodeRepository {
+	return NewPasscodeRepository(db, tableName, options...)
+}
 func NewPasscodeRepository(db *gocql.ClusterConfig, tableName string, options ...string) *PasscodeRepository {
 	var idName, passcodeName, expiredAtName string
 	if len(options) >= 1 && len(options[0]) > 0 {
