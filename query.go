@@ -85,7 +85,7 @@ func QueryWithPage(ses *gocql.Session, fieldsIndex map[string]int, results inter
 	if query.Exec() != nil {
 		return "", query.Exec()
 	}
-	err := ScanIter(query.Iter(), results)
+	err := ScanIter(query.Iter(), results, fieldsIndex)
 	if err != nil {
 		return "", err
 	}

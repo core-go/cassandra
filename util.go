@@ -7,6 +7,8 @@ import (
 	"time"
 )
 
+const IgnoreReadWrite = "-"
+
 const (
 	t1 = "2006-01-02T15:04:05Z"
 	t2 = "2006-01-02T15:04:05-0700"

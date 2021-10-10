@@ -7,7 +7,6 @@ import (
 	"strings"
 )
 
-const IgnoreReadWrite = "-"
 func BuildParam(i int) string {
 	return "?"
 }
@@ -36,7 +35,6 @@ func BuildToInsertWithVersion(table string, model interface{}, versionIndex int,
 	icols := make([]string, 0)
 	i := 1
 	for _, fdb := range cols {
-		// fdb := schema[col]
 		if fdb.Index == versionIndex {
 			icols = append(icols, fdb.Column)
 			values = append(values, "1")
