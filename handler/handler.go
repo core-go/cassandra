@@ -35,7 +35,7 @@ func (h *Handler) Exec(w http.ResponseWriter, r *http.Request) {
 		handleError(w, r, http.StatusInternalServerError, er1.Error(), h.Error, er1)
 		return
 	}
-	JSON(w, http.StatusOK, res)
+	respond(w, http.StatusOK, res)
 }
 
 func (h *Handler) Query(w http.ResponseWriter, r *http.Request) {
@@ -51,7 +51,7 @@ func (h *Handler) Query(w http.ResponseWriter, r *http.Request) {
 		handleError(w, r, 500, err.Error(), h.Error, err)
 		return
 	}
-	JSON(w, http.StatusOK, res)
+	respond(w, http.StatusOK, res)
 }
 
 func (h *Handler) ExecBatch(w http.ResponseWriter, r *http.Request) {
@@ -74,16 +74,16 @@ func (h *Handler) ExecBatch(w http.ResponseWriter, r *http.Request) {
 		handleError(w, r, 500, err.Error(), h.Error, err)
 		return
 	}
-	JSON(w, http.StatusOK, res)
+	respond(w, http.StatusOK, res)
 }
 
 func handleError(w http.ResponseWriter, r *http.Request, code int, result interface{}, logError func(context.Context, string), err error) error {
 	if logError != nil {
 		logError(r.Context(), err.Error())
 	}
-	return JSON(w, code, result)
+	return respond(w, code, result)
 }
-func JSON(w http.ResponseWriter, code int, result interface{}) error {
+func respond(w http.ResponseWriter, code int, result interface{}) error {
 	w.WriteHeader(code)
 	w.Header().Set("Content-Type", "application/json")
 	err := json.NewEncoder(w).Encode(result)
