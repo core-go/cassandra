@@ -237,6 +237,10 @@ func ParseDates(args []interface{}, dates []int) []interface{} {
 }
 func Round(num big.Float, scale int) big.Float {
 	marshal, _ := num.MarshalText()
+	if strings.IndexRune(string(marshal), '.') == -1 {
+		return num
+	}
+	fmt.Println(marshal)
 	var dot int
 	for i, v := range marshal {
 		if v == 46 {
