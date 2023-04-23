@@ -3,7 +3,6 @@ package cassandra
 import (
 	"context"
 	"fmt"
-	q "github.com/core-go/sql"
 	"github.com/gocql/gocql"
 	"reflect"
 	"strconv"
@@ -23,11 +22,11 @@ type Writer struct {
 	Driver         string
 }
 
-func NewWriter(proxy *gocql.ClusterConfig, tableName string, modelType reflect.Type, options ...q.Mapper) (*Writer, error) {
+func NewWriter(proxy *gocql.ClusterConfig, tableName string, modelType reflect.Type, options ...Mapper) (*Writer, error) {
 	return NewWriterWithVersion(proxy, tableName, modelType, "", options...)
 }
-func NewWriterWithVersion(proxy *gocql.ClusterConfig, tableName string, modelType reflect.Type, versionField string, options ...q.Mapper) (*Writer, error) {
-	var mapper q.Mapper
+func NewWriterWithVersion(proxy *gocql.ClusterConfig, tableName string, modelType reflect.Type, versionField string, options ...Mapper) (*Writer, error) {
+	var mapper Mapper
 	if len(options) > 0 {
 		mapper = options[0]
 	}
@@ -128,7 +127,7 @@ func (s *Writer) Patch(ctx context.Context, model map[string]interface{}) (int64
 func MapToDB(model *map[string]interface{}, modelType reflect.Type) {
 	for colName, value := range *model {
 		if boolValue, boolOk := value.(bool); boolOk {
-			index := q.GetIndexByTag("json", colName, modelType)
+			index := GetIndexByTag("json", colName, modelType)
 			if index > -1 {
 				valueS := modelType.Field(index).Tag.Get(strconv.FormatBool(boolValue))
 				valueInt, err := strconv.Atoi(valueS)
@@ -144,7 +143,7 @@ func MapToDB(model *map[string]interface{}, modelType reflect.Type) {
 	}
 }
 func (s *Writer) Delete(ctx context.Context, id interface{}) (int64, error) {
-	query := q.BuildQueryById(id, s.modelType, s.keys[0])
+	query := BuildQueryById(id, s.modelType, s.keys[0])
 	sql, values := BuildToDelete(s.table, query)
 	ses, err := s.DB.CreateSession()
 	if err != nil {
