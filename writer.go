@@ -22,10 +22,10 @@ type Writer struct {
 	Driver         string
 }
 
-func NewWriter(proxy *gocql.ClusterConfig, tableName string, modelType reflect.Type, options ...Mapper) (*Writer, error) {
-	return NewWriterWithVersion(proxy, tableName, modelType, "", options...)
+func NewWriter(db *gocql.ClusterConfig, tableName string, modelType reflect.Type, options ...Mapper) (*Writer, error) {
+	return NewWriterWithVersion(db, tableName, modelType, "", options...)
 }
-func NewWriterWithVersion(proxy *gocql.ClusterConfig, tableName string, modelType reflect.Type, versionField string, options ...Mapper) (*Writer, error) {
+func NewWriterWithVersion(db *gocql.ClusterConfig, tableName string, modelType reflect.Type, versionField string, options ...Mapper) (*Writer, error) {
 	var mapper Mapper
 	if len(options) > 0 {
 		mapper = options[0]
@@ -33,9 +33,9 @@ func NewWriterWithVersion(proxy *gocql.ClusterConfig, tableName string, modelTyp
 	var loader *Loader
 	var err error
 	if mapper != nil {
-		loader, err = NewLoader(proxy, tableName, modelType, mapper.DbToModel)
+		loader, err = NewLoader(db, tableName, modelType, mapper.DbToModel)
 	} else {
-		loader, err = NewLoader(proxy, tableName, modelType, nil)
+		loader, err = NewLoader(db, tableName, modelType, nil)
 	}
 	if err != nil {
 		return nil, err
