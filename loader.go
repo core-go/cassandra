@@ -88,6 +88,10 @@ func (s *Loader) Load(ctx context.Context, id interface{}) (interface{}, error) 
 }
 
 func (s *Loader) LoadAndDecode(ctx context.Context, id interface{}, result interface{}) (bool, error) {
+	return s.Get(ctx, id, result)
+}
+
+func (s *Loader) Get(ctx context.Context, id interface{}, result interface{}) (bool, error) {
 	queryFindById, values := BuildFindById(s.table, s.BuildParam, id, s.mapJsonColumnKeys, s.keys)
 	ses, err := s.DB.CreateSession()
 	if err != nil {
@@ -104,6 +108,10 @@ func (s *Loader) LoadAndDecode(ctx context.Context, id interface{}, result inter
 	if !iter.Scan(r...) {
 		return false, nil
 	} else {
+		if s.Map != nil {
+			_, er2 := s.Map(ctx, result)
+			return true, er2
+		}
 		return true, nil
 	}
 }
@@ -116,6 +124,7 @@ func (s *Loader) Exist(ctx context.Context, id interface{}) (bool, error) {
 	ok := IsNil(v)
 	return ok, nil
 }
+
 func FindPrimaryKeys(modelType reflect.Type) ([]string, []string) {
 	numField := modelType.NumField()
 	var idColumnFields []string
