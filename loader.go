@@ -53,6 +53,11 @@ func (s *Loader) All(ctx context.Context) (interface{}, error) {
 		return nil, err
 	}
 	err = ScanIter(q.Iter(), result, s.fieldsIndex)
+	if err == nil {
+		if s.Map != nil {
+			return MapModels(ctx, result, s.Map)
+		}
+	}
 	return result, err
 }
 
@@ -72,7 +77,11 @@ func (s *Loader) Load(ctx context.Context, id interface{}) (interface{}, error) 
 		return nil, err
 	}
 	if len(arr) > 0 {
-		return arr[0], nil
+		if s.Map != nil {
+			_, er2 := s.Map(ctx, &arr[0])
+			return &arr[0], er2
+		}
+		return &arr[0], nil
 	} else {
 		return nil, nil
 	}
@@ -107,7 +116,6 @@ func (s *Loader) Exist(ctx context.Context, id interface{}) (bool, error) {
 	ok := IsNil(v)
 	return ok, nil
 }
-
 func FindPrimaryKeys(modelType reflect.Type) ([]string, []string) {
 	numField := modelType.NumField()
 	var idColumnFields []string
