@@ -17,10 +17,9 @@ type SearchBuilder struct {
 	BuildQuery  func(sm interface{}) (string, []interface{})
 	ModelType   reflect.Type
 	Map         func(ctx context.Context, model interface{}) (interface{}, error)
-	PageState   string
 	fieldsIndex map[string]int
 }
-func NewSearchBuilder(db *gocql.ClusterConfig, modelType reflect.Type, buildQuery func(interface{}) (string, []interface{}), pageState string, options ...func(context.Context, interface{}) (interface{}, error)) (*SearchBuilder, error) {
+func NewSearchBuilder(db *gocql.ClusterConfig, modelType reflect.Type, buildQuery func(interface{}) (string, []interface{}), options ...func(context.Context, interface{}) (interface{}, error)) (*SearchBuilder, error) {
 	var mp func(context.Context, interface{}) (interface{}, error)
 	if len(options) >= 1 {
 		mp = options[0]
@@ -29,18 +28,18 @@ func NewSearchBuilder(db *gocql.ClusterConfig, modelType reflect.Type, buildQuer
 	if err != nil {
 		return nil, err
 	}
-	builder := &SearchBuilder{DB: db, fieldsIndex: fieldsIndex, BuildQuery: buildQuery, PageState: pageState, ModelType: modelType, Map: mp}
+	builder := &SearchBuilder{DB: db, fieldsIndex: fieldsIndex, BuildQuery: buildQuery, ModelType: modelType, Map: mp}
 	return builder, nil
 }
 
-func (b *SearchBuilder) Search(ctx context.Context, m interface{}, results interface{}, limit int64, options ...int64) (int64, string, error) {
+func (b *SearchBuilder) Search(ctx context.Context, m interface{}, results interface{}, limit int64, refId string) (string, error) {
 	sql, params := b.BuildQuery(m)
 	ses, err := b.DB.CreateSession()
 	if err != nil {
-		return -1, "", err
+		return "", err
 	}
-	nextPageToken, er2 := QueryWithPage(ses, b.fieldsIndex, results, sql, params, int(limit))
-	return -1, nextPageToken, er2
+	nextPageToken, er2 := QueryWithPage(ses, b.fieldsIndex, results, sql, params, int(limit), refId)
+	return nextPageToken, er2
 }
 func BuildSort(sortString string, modelType reflect.Type) string {
 	var sort = make([]string, 0)
