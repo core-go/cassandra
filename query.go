@@ -1,6 +1,7 @@
 package cassandra
 
 import (
+	"context"
 	"encoding/hex"
 	"reflect"
 	"strings"
@@ -72,12 +73,12 @@ func Query(ses *gocql.Session, fieldsIndex map[string]int, results interface{}, 
 	}
 	return ScanIter(q.Iter(), results, fieldsIndex)
 }
-func QueryWithPage(ses *gocql.Session, fieldsIndex map[string]int, results interface{}, sql string, values []interface{}, max int, options ...string) (string, error) {
-	nextPageToken := ""
-	if len(options) > 0 && len(options[0]) > 0 {
-		nextPageToken = options[0]
+func QueryWithPage(ses *gocql.Session, fieldsIndex map[string]int, results interface{}, sql string, values []interface{}, max int, refId string, options...func(context.Context, interface{}) (interface{}, error)) (string, error) {
+	var mp func(context.Context, interface{}) (interface{}, error)
+	if len(options) > 0 && options[0] != nil {
+		mp = options[0]
 	}
-	next, er0 := hex.DecodeString(nextPageToken)
+	next, er0 := hex.DecodeString(refId)
 	if er0 != nil {
 		return "", er0
 	}
@@ -89,7 +90,11 @@ func QueryWithPage(ses *gocql.Session, fieldsIndex map[string]int, results inter
 	if err != nil {
 		return "", err
 	}
-	nextPageToken = hex.EncodeToString(query.Iter().PageState())
+	nextPageToken := hex.EncodeToString(query.Iter().PageState())
+	if mp != nil {
+		_, err := MapModels(context.Background(), results, mp)
+		return nextPageToken, err
+	}
 	return nextPageToken, nil
 }
 func ToCamelCase(s string) string {

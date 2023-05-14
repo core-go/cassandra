@@ -6,11 +6,11 @@ import (
 	"reflect"
 )
 
-func NewSearchLoader(db *gocql.ClusterConfig, tableName string, modelType reflect.Type, buildQuery func(interface{}) (string, []interface{}), pageState string, options ...func(context.Context, interface{}) (interface{}, error)) (*Searcher, *Loader, error) {
-	return NewSqlSearchLoader(db, tableName, modelType, buildQuery, pageState, options...)
+func NewSearchLoader(db *gocql.ClusterConfig, tableName string, modelType reflect.Type, buildQuery func(interface{}) (string, []interface{}), options ...func(context.Context, interface{}) (interface{}, error)) (*Searcher, *Loader, error) {
+	return NewSqlSearchLoader(db, tableName, modelType, buildQuery, options...)
 }
 
-func NewSqlSearchLoader(db *gocql.ClusterConfig, tableName string, modelType reflect.Type, buildQuery func(interface{}) (string, []interface{}), pageState string, options ...func(context.Context, interface{}) (interface{}, error)) (*Searcher, *Loader, error) {
+func NewSqlSearchLoader(db *gocql.ClusterConfig, tableName string, modelType reflect.Type, buildQuery func(interface{}) (string, []interface{}), options ...func(context.Context, interface{}) (interface{}, error)) (*Searcher, *Loader, error) {
 	var mp func(context.Context, interface{}) (interface{}, error)
 	if len(options) >= 1 {
 		mp = options[0]
@@ -19,6 +19,6 @@ func NewSqlSearchLoader(db *gocql.ClusterConfig, tableName string, modelType ref
 	if er0 != nil {
 		return nil, loader, er0
 	}
-	searcher, er1 := NewSearcherWithQuery(db, modelType, buildQuery, pageState, options...)
+	searcher, er1 := NewSearcherWithQuery(db, modelType, buildQuery, options...)
 	return searcher, loader, er1
 }

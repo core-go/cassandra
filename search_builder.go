@@ -8,8 +8,8 @@ import (
 )
 
 const (
-	desc                = "desc"
-	asc                 = "asc"
+	desc = "desc"
+	asc  = "asc"
 )
 
 type SearchBuilder struct {
@@ -38,7 +38,7 @@ func (b *SearchBuilder) Search(ctx context.Context, m interface{}, results inter
 	if err != nil {
 		return "", err
 	}
-	nextPageToken, er2 := QueryWithPage(ses, b.fieldsIndex, results, sql, params, int(limit), refId)
+	nextPageToken, er2 := QueryWithPage(ses, b.fieldsIndex, results, sql, params, int(limit), refId, b.Map)
 	return nextPageToken, er2
 }
 func BuildSort(sortString string, modelType reflect.Type) string {
