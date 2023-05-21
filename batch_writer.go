@@ -48,6 +48,7 @@ func (w *BatchWriter) Write(ctx context.Context, models interface{}) ([]int, []i
 	if er0 != nil {
 		return successIndices, failIndices, er0
 	}
+	defer session.Close()
 	_, err := SaveBatch(ctx, session, w.tableName, models2, w.Schema)
 	s := reflect.ValueOf(models)
 	if err == nil {

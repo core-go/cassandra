@@ -47,6 +47,8 @@ func (s *Loader) All(ctx context.Context) (interface{}, error) {
 	if err != nil {
 		return nil, err
 	}
+	defer ses.Close()
+
 	q := ses.Query(query)
 	err = q.Exec()
 	if err != nil {
@@ -67,6 +69,8 @@ func (s *Loader) Load(ctx context.Context, id interface{}) (interface{}, error) 
 	if err != nil {
 		return nil, err
 	}
+	defer ses.Close()
+
 	q := ses.Query(queryFindById, values...)
 	err = q.Exec()
 	if err != nil {
@@ -97,6 +101,8 @@ func (s *Loader) Get(ctx context.Context, id interface{}, result interface{}) (b
 	if err != nil {
 		return false, err
 	}
+	defer ses.Close()
+
 	q := ses.Query(queryFindById, values...)
 	err = q.Exec()
 	if err != nil {

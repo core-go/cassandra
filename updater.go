@@ -40,6 +40,7 @@ func (w *Updater) Write(ctx context.Context, model interface{}) error {
 		if er0 != nil {
 			return er0
 		}
+		defer session.Close()
 		_, er1 := UpdateWithVersion(session, w.tableName, m2, w.VersionIndex, w.schema)
 		return er1
 	}
@@ -47,6 +48,7 @@ func (w *Updater) Write(ctx context.Context, model interface{}) error {
 	if er0 != nil {
 		return er0
 	}
+	defer session.Close()
 	_, er2 := UpdateWithVersion(session, w.tableName, model, w.VersionIndex, w.schema)
 	return er2
 }

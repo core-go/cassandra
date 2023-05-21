@@ -84,8 +84,8 @@ func handleError(w http.ResponseWriter, r *http.Request, code int, result interf
 	return respond(w, code, result)
 }
 func respond(w http.ResponseWriter, code int, result interface{}) error {
-	w.WriteHeader(code)
 	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(code)
 	err := json.NewEncoder(w).Encode(result)
 	return err
 }

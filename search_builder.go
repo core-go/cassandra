@@ -2,9 +2,10 @@ package cassandra
 
 import (
 	"context"
-	"github.com/gocql/gocql"
 	"reflect"
 	"strings"
+
+	"github.com/gocql/gocql"
 )
 
 const (
@@ -13,11 +14,14 @@ const (
 )
 
 type SearchBuilder struct {
-	DB *gocql.ClusterConfig
+	DB          *gocql.ClusterConfig
 	BuildQuery  func(sm interface{}) (string, []interface{})
 	ModelType   reflect.Type
 	Map         func(ctx context.Context, model interface{}) (interface{}, error)
 	fieldsIndex map[string]int
+}
+func NewSearchQuery(db *gocql.ClusterConfig, modelType reflect.Type, buildQuery func(interface{}) (string, []interface{}), options ...func(context.Context, interface{}) (interface{}, error)) (*SearchBuilder, error) {
+	return NewSearchBuilder(db, modelType, buildQuery, options...)
 }
 func NewSearchBuilder(db *gocql.ClusterConfig, modelType reflect.Type, buildQuery func(interface{}) (string, []interface{}), options ...func(context.Context, interface{}) (interface{}, error)) (*SearchBuilder, error) {
 	var mp func(context.Context, interface{}) (interface{}, error)
@@ -35,6 +39,8 @@ func NewSearchBuilder(db *gocql.ClusterConfig, modelType reflect.Type, buildQuer
 func (b *SearchBuilder) Search(ctx context.Context, m interface{}, results interface{}, limit int64, refId string) (string, error) {
 	sql, params := b.BuildQuery(m)
 	ses, err := b.DB.CreateSession()
+	defer ses.Close()
+
 	if err != nil {
 		return "", err
 	}

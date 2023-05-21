@@ -48,6 +48,7 @@ func (w *BatchInserter) Write(ctx context.Context, models interface{}) ([]int, [
 	if er0 != nil {
 		return successIndices, failIndices, er0
 	}
+	defer session.Close()
 	_, err := InsertBatchWithVersion(ctx, session, w.tableName, models2, w.VersionIndex, w.Schema)
 	s := reflect.ValueOf(models)
 	if err == nil {

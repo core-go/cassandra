@@ -32,6 +32,7 @@ func (w *CassandraWriter) Write(ctx context.Context, model interface{}) error {
 		if er0 != nil {
 			return er0
 		}
+		defer session.Close()
 		_, err := Save(session, w.tableName, m2, w.schema)
 		return err
 	}
@@ -39,6 +40,7 @@ func (w *CassandraWriter) Write(ctx context.Context, model interface{}) error {
 	if er0 != nil {
 		return er0
 	}
+	defer session.Close()
 	_, err := Save(session, w.tableName, model, w.schema)
 	return err
 }

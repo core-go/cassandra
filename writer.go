@@ -70,6 +70,7 @@ func (s *Writer) Insert(ctx context.Context, model interface{}) (int64, error) {
 	if err != nil {
 		return -1, err
 	}
+	defer ses.Close()
 	return Exec(ses, query, values...)
 }
 func (s *Writer) Update(ctx context.Context, model interface{}) (int64, error) {
@@ -88,6 +89,7 @@ func (s *Writer) Update(ctx context.Context, model interface{}) (int64, error) {
 	if err != nil {
 		return -1, err
 	}
+	defer ses.Close()
 	return Exec(ses, query, values...)
 }
 func (s *Writer) Save(ctx context.Context, model interface{}) (int64, error) {
@@ -106,6 +108,7 @@ func (s *Writer) Save(ctx context.Context, model interface{}) (int64, error) {
 	if err != nil {
 		return -1, err
 	}
+	defer ses.Close()
 	return Exec(ses, query, values...)
 }
 func (s *Writer) Patch(ctx context.Context, model map[string]interface{}) (int64, error) {
@@ -122,6 +125,7 @@ func (s *Writer) Patch(ctx context.Context, model map[string]interface{}) (int64
 	if err != nil {
 		return -1, err
 	}
+	defer ses.Close()
 	return Exec(ses, query, values...)
 }
 func MapToDB(model *map[string]interface{}, modelType reflect.Type) {
@@ -149,6 +153,7 @@ func (s *Writer) Delete(ctx context.Context, id interface{}) (int64, error) {
 	if err != nil {
 		return -1, err
 	}
+	defer ses.Close()
 	return Exec(ses, sql, values...)
 }
 type Mapper interface {
