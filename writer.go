@@ -266,6 +266,9 @@ func Contains(s []string, str string) bool {
 
 	return false
 }
+func BuildToPatch(table string, model map[string]interface{}, keyColumns []string) (string, []interface{}) {
+	return BuildToPatchWithVersion(table, model, keyColumns, "")
+}
 func BuildToPatchWithVersion(table string, model map[string]interface{}, keyColumns []string, version string) (string, []interface{}) { //version column name db
 	values := make([]string, 0)
 	where := make([]string, 0)
