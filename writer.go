@@ -9,6 +9,17 @@ import (
 	"strings"
 )
 
+func Init(modelType reflect.Type) (map[string]int, *Schema, map[string]string, []string, []string, error) {
+	fieldsIndex, err := GetColumnIndexes(modelType)
+	if err != nil {
+		return nil, nil, nil, nil, nil, err
+	}
+	schema := CreateSchema(modelType)
+	jsonColumnMap := MakeJsonColumnMap(modelType)
+	keys, arr := FindPrimaryKeys(modelType)
+	return fieldsIndex, schema, jsonColumnMap, keys, arr, nil
+}
+
 type Writer struct {
 	*Loader
 	jsonColumnMap  map[string]string
