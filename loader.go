@@ -26,6 +26,7 @@ type Loader struct {
 	mapJsonColumnKeys map[string]string
 	fieldsIndex       map[string]int
 	table             string
+	query             string
 }
 
 func NewLoader(db *gocql.ClusterConfig, tableName string, modelType reflect.Type, options ...func(context.Context, interface{}) (interface{}, error)) (*Loader, error) {
@@ -41,7 +42,8 @@ func NewLoader(db *gocql.ClusterConfig, tableName string, modelType reflect.Type
 	if len(options) > 0 {
 		mp = options[0]
 	}
-	return &Loader{DB: db, BuildParam: BuildParam, Map: mp, modelType: modelType, modelsType: modelsType, keys: idNames, mapJsonColumnKeys: mapJsonColumnKeys, fieldsIndex: fieldsIndex, table: tableName}, nil
+	query := BuildQuery(tableName, modelType)
+	return &Loader{DB: db, BuildParam: BuildParam, Map: mp, modelType: modelType, modelsType: modelsType, keys: idNames, mapJsonColumnKeys: mapJsonColumnKeys, fieldsIndex: fieldsIndex, table: tableName, query: query}, nil
 }
 
 func (s *Loader) Keys() []string {
@@ -49,7 +51,6 @@ func (s *Loader) Keys() []string {
 }
 
 func (s *Loader) All(ctx context.Context) (interface{}, error) {
-	query := BuildSelectAllQuery(s.table)
 	result := reflect.New(s.modelsType).Interface()
 	ses, err := s.DB.CreateSession()
 	if err != nil {
@@ -57,7 +58,7 @@ func (s *Loader) All(ctx context.Context) (interface{}, error) {
 	}
 	defer ses.Close()
 
-	q := ses.Query(query)
+	q := ses.Query(s.query)
 	err = q.Exec()
 	if err != nil {
 		return nil, err
@@ -72,7 +73,7 @@ func (s *Loader) All(ctx context.Context) (interface{}, error) {
 }
 
 func (s *Loader) Load(ctx context.Context, id interface{}) (interface{}, error) {
-	queryFindById, values := BuildFindById(s.table, s.BuildParam, id, s.mapJsonColumnKeys, s.keys)
+	queryFindById, values := BuildFindById(s.query, s.BuildParam, id, s.mapJsonColumnKeys, s.keys)
 	ses, err := s.DB.CreateSession()
 	if err != nil {
 		return nil, err
@@ -104,7 +105,7 @@ func (s *Loader) LoadAndDecode(ctx context.Context, id interface{}, result inter
 }
 
 func (s *Loader) Get(ctx context.Context, id interface{}, result interface{}) (bool, error) {
-	queryFindById, values := BuildFindById(s.table, s.BuildParam, id, s.mapJsonColumnKeys, s.keys)
+	queryFindById, values := BuildFindById(s.query, s.BuildParam, id, s.mapJsonColumnKeys, s.keys)
 	ses, err := s.DB.CreateSession()
 	if err != nil {
 		return false, err
@@ -214,7 +215,7 @@ func BuildSelectAllQuery(table string) string {
 	return fmt.Sprintf("select * from %v", table)
 }
 
-func BuildFindById(table string, buildParam func(i int) string, id interface{}, mapJsonColumnKeys map[string]string, keys []string) (string, []interface{}) {
+func BuildFindById(query string, buildParam func(i int) string, id interface{}, mapJsonColumnKeys map[string]string, keys []string) (string, []interface{}) {
 	var where = ""
 	var values []interface{}
 	if len(keys) == 1 {
@@ -235,7 +236,7 @@ func BuildFindById(table string, buildParam func(i int) string, id interface{}, 
 			where = "where " + strings.Join(conditions, " and ")
 		}
 	}
-	return fmt.Sprintf("select * from %v %v", table, where), values
+	return fmt.Sprintf("%v %v", query, where), values
 }
 func IsNil(i interface{}) bool {
 	if i == nil {
