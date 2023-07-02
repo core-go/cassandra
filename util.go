@@ -40,6 +40,13 @@ type Schema struct {
 	Fields   map[string]*FieldDB
 }
 
+func BuildFieldsBySchema(schema *Schema) string {
+	columns := make([]string, 0)
+	for _, s := range schema.SColumns {
+		columns = append(columns, s)
+	}
+	return strings.Join(columns, ",")
+}
 func BuildQueryBySchema(table string, schema *Schema) string {
 	columns := make([]string, 0)
 	for _, s := range schema.SColumns {
@@ -49,7 +56,7 @@ func BuildQueryBySchema(table string, schema *Schema) string {
 }
 func BuildFields(modelType reflect.Type) string {
 	columns := GetFields(modelType)
-	return " " + strings.Join(columns, ",") + " "
+	return strings.Join(columns, ",")
 }
 func GetFields(modelType reflect.Type) []string {
 	m := modelType

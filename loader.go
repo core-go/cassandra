@@ -8,13 +8,13 @@ import (
 	"strings"
 )
 
-func InitFields(modelType reflect.Type, table string) (map[string]int, string, error) {
+func InitFields(modelType reflect.Type) (map[string]int, string, error) {
 	fieldsIndex, err := GetColumnIndexes(modelType)
 	if err != nil {
 		return nil, "", err
 	}
-	query := BuildQuery(table, modelType)
-	return fieldsIndex, query, nil
+	fields := BuildFields(modelType)
+	return fieldsIndex, fields, nil
 }
 type Loader struct {
 	DB                *gocql.ClusterConfig
