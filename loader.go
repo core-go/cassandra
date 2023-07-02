@@ -13,7 +13,7 @@ func InitFields(modelType reflect.Type, table string) (map[string]int, string, e
 	if err != nil {
 		return nil, "", err
 	}
-	query :=  BuildQuery(table, modelType)
+	query := BuildQuery(table, modelType)
 	return fieldsIndex, query, nil
 }
 type Loader struct {

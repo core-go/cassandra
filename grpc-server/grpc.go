@@ -11,13 +11,13 @@ import (
 
 type GRPCHandler struct {
 	grpc.DbProxyServer
-	Session   *gocql.Session
+	DB        *gocql.ClusterConfig
 	Transform func(s string) string
 	Error     func(context.Context, string)
 }
 
-func NewHandler(db *gocql.Session, transform func(s string) string, logError func(context.Context, string)) *GRPCHandler {
-	g := GRPCHandler{ Session: db, Transform: transform, Error: logError }
+func NewHandler(db *gocql.ClusterConfig, transform func(s string) string, logError func(context.Context, string)) *GRPCHandler {
+	g := GRPCHandler{ DB: db, Transform: transform, Error: logError }
 	return &g
 }
 
@@ -53,7 +53,12 @@ func (s *GRPCHandler) Query(ctx context.Context, in *grpc.Request) (*grpc.QueryR
 		statement.Dates = append(statement.Dates, int(v))
 	}
 	statement.Params = c.ParseDates(statement.Params, statement.Dates)
-	res, err := c.QueryMap(s.Session, s.Transform, statement.Query, statement.Params...)
+	session, err := s.DB.CreateSession()
+	if err != nil {
+		return &grpc.QueryResponse{Message: "Error: " + err.Error()}, err
+	}
+	defer session.Close()
+	res, err := c.QueryMap(session, s.Transform, statement.Query, statement.Params...)
 	data := new(bytes.Buffer)
 	err = json.NewEncoder(data).Encode(&res)
 	if err != nil {
@@ -75,7 +80,12 @@ func (s *GRPCHandler) Execute(ctx context.Context, in *grpc.Request) (*grpc.Resp
 		statement.Dates = append(statement.Dates, int(v))
 	}
 	statement.Params = c.ParseDates(statement.Params, statement.Dates)
-	result, er1 := c.Exec(s.Session, statement.Query, statement.Params...)
+	session, err := s.DB.CreateSession()
+	if err != nil {
+		return &grpc.Response{Result: -1}, err
+	}
+	defer session.Close()
+	result, er1 := c.Exec(session, statement.Query, statement.Params...)
 	if er1 != nil {
 		return &grpc.Response{Result: -1}, er1
 	}
@@ -95,6 +105,11 @@ func (s *GRPCHandler) ExecBatch(ctx context.Context, in *grpc.BatchRequest) (*gr
 		st.Params = c.ParseDates(statements[i].Params, statements[i].Dates)
 		b = append(b, st)
 	}
-	res, err := c.ExecuteAll(ctx, s.Session, b...)
+	session, err := s.DB.CreateSession()
+	if err != nil {
+		return &grpc.Response{Result: -1}, err
+	}
+	defer session.Close()
+	res, err := c.ExecuteAll(ctx, session, b...)
 	return &grpc.Response{Result: res}, err
 }

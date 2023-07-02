@@ -47,7 +47,11 @@ func BuildQueryBySchema(table string, schema *Schema) string {
 	}
 	return "select " + strings.Join(columns, ",") + " from " + table + " "
 }
-func BuildQuery(table string, modelType reflect.Type) string {
+func BuildFields(modelType reflect.Type) string {
+	columns := GetFields(modelType)
+	return " " + strings.Join(columns, ",") + " "
+}
+func GetFields(modelType reflect.Type) []string {
 	m := modelType
 	if m.Kind() == reflect.Ptr {
 		m = m.Elem()
@@ -75,6 +79,10 @@ func BuildQuery(table string, modelType reflect.Type) string {
 			}
 		}
 	}
+	return columns
+}
+func BuildQuery(table string, modelType reflect.Type) string {
+	columns := GetFields(modelType)
 	return "select " + strings.Join(columns, ",") + " from " + table + " "
 }
 func CreateSchema(modelType reflect.Type) *Schema {

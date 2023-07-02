@@ -78,7 +78,7 @@ func QueryWithPage(ses *gocql.Session, fieldsIndex map[string]int, results inter
 	if er0 != nil {
 		return "", er0
 	}
-	query := ses.Query(sql, values).PageState(next).PageSize(int(max))
+	query := ses.Query(sql, values...).PageState(next).PageSize(int(max))
 	if query.Exec() != nil {
 		return "", query.Exec()
 	}

@@ -46,32 +46,31 @@ func NewPasscodeRepository(db *gocql.ClusterConfig, tableName string, options ..
 }
 
 func (p *PasscodeRepository) Save(ctx context.Context, id string, passcode string, expiredAt time.Time) (int64, error) {
-	session, er0 := p.db.CreateSession()
 	columns := []string{p.idName, p.passcodeName, p.expiredAtName}
+	queryString := fmt.Sprintf("INSERT INTO %s (%s) VALUES (? ,? ,?)",
+		p.tableName,
+		strings.Join(columns, ","))
+	session, er0 := p.db.CreateSession()
 	if er0 != nil {
 		return 0, er0
 	}
-	queryString := fmt.Sprintf("INSERT INTO %s (%s) VALUES (? ,? ,?)",
-		p.tableName,
-		strings.Join(columns, ","),
-	)
-
+	defer session.Close()
 	err := session.Query(queryString, id, passcode, expiredAt).Exec()
 	if err != nil {
 		return 0, err
 	}
-	defer session.Close()
 	return 1, nil
 }
 
 func (p *PasscodeRepository) Load(ctx context.Context, id string) (string, time.Time, error) {
 	session, er0 := p.db.CreateSession()
-	// var returnId strng
-	var code string
-	var expiredAt time.Time
 	if er0 != nil {
 		return "", time.Now().Add(-24 * time.Hour), er0
 	}
+	defer session.Close()
+	// var returnId strng
+	var code string
+	var expiredAt time.Time
 	strSql := fmt.Sprintf(`SELECT %s, %s FROM `, p.passcodeName, p.expiredAtName) + p.tableName + ` WHERE ` + p.idName + ` =? ALLOW FILTERING`
 	er1 := session.Query(strSql, id).Scan(&code, &expiredAt)
 	if er1 != nil {
@@ -85,6 +84,7 @@ func (p *PasscodeRepository) Delete(ctx context.Context, id string) (int64, erro
 	if er0 != nil {
 		return 0, er0
 	}
+	defer session.Close()
 	query := "delete from " + p.tableName + " where " + p.idName + " = ?"
 	er1 := session.Query(query, id).Exec()
 	if er1 != nil {

@@ -61,6 +61,7 @@ func (s *Exporter) Export(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
+	defer session.Close()
 	q := session.Query(query, p...)
 	err = q.Exec()
 	if err != nil {
