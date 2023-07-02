@@ -44,10 +44,10 @@ func (b *SearchBuilder) Search(ctx context.Context, m interface{}, results inter
 	if err != nil {
 		return "", err
 	}
-	nextPageToken, er2 := QueryWithPage(ses, b.fieldsIndex, results, sql, params, int(limit), refId, b.Map)
+	nextPageToken, er2 := QueryWithMap(ses, b.fieldsIndex, results, sql, params, limit, refId, b.Map)
 	return nextPageToken, er2
 }
-func BuildSort(sortString string, modelType reflect.Type) string {
+func GetSort(sortString string, modelType reflect.Type) string {
 	var sort = make([]string, 0)
 	sorts := strings.Split(sortString, ",")
 	for i := 0; i < len(sorts); i++ {
@@ -64,7 +64,15 @@ func BuildSort(sortString string, modelType reflect.Type) string {
 		}
 	}
 	if len(sort) > 0 {
-		return ` order by ` + strings.Join(sort, ",")
+		return strings.Join(sort, ",")
+	} else {
+		return ""
+	}
+}
+func BuildSort(sortString string, modelType reflect.Type) string {
+	sort := GetSort(sortString, modelType)
+	if len(sort) > 0 {
+		return ` order by ` + sort
 	} else {
 		return ""
 	}

@@ -73,7 +73,23 @@ func Query(ses *gocql.Session, fieldsIndex map[string]int, results interface{}, 
 	}
 	return ScanIter(q.Iter(), results, fieldsIndex)
 }
-func QueryWithPage(ses *gocql.Session, fieldsIndex map[string]int, results interface{}, sql string, values []interface{}, max int, refId string, options...func(context.Context, interface{}) (interface{}, error)) (string, error) {
+func QueryWithPage(ses *gocql.Session, fieldsIndex map[string]int, results interface{}, max int64, refId string, sql string, values...interface{}) (string, error) {
+	next, er0 := hex.DecodeString(refId)
+	if er0 != nil {
+		return "", er0
+	}
+	query := ses.Query(sql, values).PageState(next).PageSize(int(max))
+	if query.Exec() != nil {
+		return "", query.Exec()
+	}
+	err := ScanIter(query.Iter(), results, fieldsIndex)
+	if err != nil {
+		return "", err
+	}
+	nextPageToken := hex.EncodeToString(query.Iter().PageState())
+	return nextPageToken, nil
+}
+func QueryWithMap(ses *gocql.Session, fieldsIndex map[string]int, results interface{}, sql string, values []interface{}, max int64, refId string, options...func(context.Context, interface{}) (interface{}, error)) (string, error) {
 	var mp func(context.Context, interface{}) (interface{}, error)
 	if len(options) > 0 && options[0] != nil {
 		mp = options[0]
@@ -82,7 +98,7 @@ func QueryWithPage(ses *gocql.Session, fieldsIndex map[string]int, results inter
 	if er0 != nil {
 		return "", er0
 	}
-	query := ses.Query(sql, values...).PageState(next).PageSize(max)
+	query := ses.Query(sql, values...).PageState(next).PageSize(int(max))
 	if query.Exec() != nil {
 		return "", query.Exec()
 	}
