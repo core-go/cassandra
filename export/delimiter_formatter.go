@@ -11,9 +11,7 @@ import (
 	"time"
 )
 
-const (
-	DateLayout string = "2006-01-02 15:04:05 +0700 +07"
-)
+const DateLayout string = "2006-01-02 15:04:05 +0700 +07"
 
 type DelimiterFormatter struct {
 	Delimiter  string
