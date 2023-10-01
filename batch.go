@@ -5,6 +5,24 @@ import (
 	"reflect"
 )
 
+func InterfaceSlice(slice interface{}) ([]interface{}, error) {
+	s := reflect.Indirect(reflect.ValueOf(slice))
+	if s.Kind() != reflect.Slice {
+		return nil, fmt.Errorf("InterfaceSlice() given a non-slice type")
+	}
+	ret := make([]interface{}, s.Len())
+
+	for i := 0; i < s.Len(); i++ {
+		ret[i] = s.Index(i).Interface()
+	}
+	return ret, nil
+}
+func ToArrayIndex(value reflect.Value, indices []int) []int {
+	for i := 0; i < value.Len(); i++ {
+		indices = append(indices, i)
+	}
+	return indices
+}
 func BuildToInsertBatch(table string, models interface{}, options...*Schema) ([]Statement, error) {
 	return BuildToInsertBatchWithVersion(table, models, -1, false, options...)
 }

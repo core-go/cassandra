@@ -2,7 +2,6 @@ package cassandra
 
 import (
 	"context"
-	"fmt"
 	"reflect"
 )
 
@@ -27,22 +26,4 @@ func MapModels(ctx context.Context, models interface{}, mp func(context.Context,
 		}
 	}
 	return models, nil
-}
-func InterfaceSlice(slice interface{}) ([]interface{}, error) {
-	s := reflect.Indirect(reflect.ValueOf(slice))
-	if s.Kind() != reflect.Slice {
-		return nil, fmt.Errorf("InterfaceSlice() given a non-slice type")
-	}
-	ret := make([]interface{}, s.Len())
-
-	for i := 0; i < s.Len(); i++ {
-		ret[i] = s.Index(i).Interface()
-	}
-	return ret, nil
-}
-func ToArrayIndex(value reflect.Value, indices []int) []int {
-	for i := 0; i < value.Len(); i++ {
-		indices = append(indices, i)
-	}
-	return indices
 }
