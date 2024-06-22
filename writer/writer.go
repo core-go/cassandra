@@ -8,7 +8,7 @@ import (
 	"github.com/gocql/gocql"
 )
 
-type CassandraWriter struct {
+type Writer struct {
 	db           *gocql.ClusterConfig
 	tableName    string
 	Map          func(ctx context.Context, model interface{}) (interface{}, error)
@@ -16,15 +16,15 @@ type CassandraWriter struct {
 	VersionIndex int
 }
 
-func NewCassandraWriter(session *gocql.ClusterConfig, tableName string, modelType reflect.Type, options ...func(context.Context, interface{}) (interface{}, error)) *CassandraWriter {
+func NewWriter(session *gocql.ClusterConfig, tableName string, modelType reflect.Type, options ...func(context.Context, interface{}) (interface{}, error)) *Writer {
 	var mp func(context.Context, interface{}) (interface{}, error)
 	if len(options) >= 1 {
 		mp = options[0]
 	}
 	schema := c.CreateSchema(modelType)
-	return &CassandraWriter{db: session, tableName: tableName, Map: mp, schema: schema}
+	return &Writer{db: session, tableName: tableName, Map: mp, schema: schema}
 }
-func (w *CassandraWriter) Write(ctx context.Context, model interface{}) error {
+func (w *Writer) Write(ctx context.Context, model interface{}) error {
 	if w.Map != nil {
 		m2, er0 := w.Map(ctx, model)
 		if er0 != nil {
