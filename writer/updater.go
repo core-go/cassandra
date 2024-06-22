@@ -1,9 +1,11 @@
-package cassandra
+package writer
 
 import (
 	"context"
-	"github.com/gocql/gocql"
 	"reflect"
+
+	c "github.com/core-go/cassandra"
+	"github.com/gocql/gocql"
 )
 
 type Updater struct {
@@ -11,7 +13,7 @@ type Updater struct {
 	tableName    string
 	Map          func(ctx context.Context, model interface{}) (interface{}, error)
 	VersionIndex int
-	schema       *Schema
+	schema       *c.Schema
 }
 
 func NewUpdater(db *gocql.ClusterConfig, tableName string, modelType reflect.Type, options ...func(context.Context, interface{}) (interface{}, error)) *Updater {
@@ -26,7 +28,7 @@ func NewUpdaterWithVersion(db *gocql.ClusterConfig, tableName string, modelType 
 	if len(options) > 0 && options[0] >= 0 {
 		version = options[0]
 	}
-	schema := CreateSchema(modelType)
+	schema := c.CreateSchema(modelType)
 	return &Updater{db: db, tableName: tableName, VersionIndex: version, schema: schema, Map: mp}
 }
 
@@ -41,7 +43,7 @@ func (w *Updater) Write(ctx context.Context, model interface{}) error {
 			return er0
 		}
 		defer session.Close()
-		_, er1 := UpdateWithVersion(session, w.tableName, m2, w.VersionIndex, w.schema)
+		_, er1 := c.UpdateWithVersion(session, w.tableName, m2, w.VersionIndex, w.schema)
 		return er1
 	}
 	session, er0 := w.db.CreateSession()
@@ -49,6 +51,6 @@ func (w *Updater) Write(ctx context.Context, model interface{}) error {
 		return er0
 	}
 	defer session.Close()
-	_, er2 := UpdateWithVersion(session, w.tableName, model, w.VersionIndex, w.schema)
+	_, er2 := c.UpdateWithVersion(session, w.tableName, model, w.VersionIndex, w.schema)
 	return er2
 }

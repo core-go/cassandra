@@ -1,16 +1,18 @@
-package cassandra
+package writer
 
 import (
 	"context"
-	"github.com/gocql/gocql"
 	"reflect"
+
+	c "github.com/core-go/cassandra"
+	"github.com/gocql/gocql"
 )
 
 type Inserter struct {
 	db           *gocql.ClusterConfig
 	tableName    string
 	Map          func(ctx context.Context, model interface{}) (interface{}, error)
-	schema       *Schema
+	schema       *c.Schema
 	VersionIndex int
 }
 
@@ -19,7 +21,7 @@ func NewInserterWithMap(db *gocql.ClusterConfig, tableName string, modelType ref
 	if len(options) > 0 && options[0] >= 0 {
 		versionIndex = options[0]
 	}
-	schema := CreateSchema(modelType)
+	schema := c.CreateSchema(modelType)
 	return &Inserter{db: db, tableName: tableName, Map: mp, schema: schema, VersionIndex: versionIndex}
 }
 
@@ -42,7 +44,7 @@ func (w *Inserter) Write(ctx context.Context, model interface{}) error {
 			return er0
 		}
 		defer session.Close()
-		_, err := InsertWithVersion(session, w.tableName, m2, w.VersionIndex, w.schema)
+		_, err := c.InsertWithVersion(session, w.tableName, m2, w.VersionIndex, w.schema)
 		return err
 	}
 	session, er0 := w.db.CreateSession()
@@ -50,6 +52,6 @@ func (w *Inserter) Write(ctx context.Context, model interface{}) error {
 		return er0
 	}
 	defer session.Close()
-	_, err := InsertWithVersion(session, w.tableName, model, w.VersionIndex, w.schema)
+	_, err := c.InsertWithVersion(session, w.tableName, model, w.VersionIndex, w.schema)
 	return err
 }
