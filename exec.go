@@ -5,13 +5,9 @@ import (
 	"github.com/gocql/gocql"
 )
 
-func Exec(ses *gocql.Session, query string, values...interface{}) (int64, error) {
+func Exec(ses *gocql.Session, query string, values ...interface{}) error {
 	q := ses.Query(query, values...)
-	err := q.Exec()
-	if err != nil {
-		return 0, err
-	}
-	return 1, nil
+	return q.Exec()
 }
 func ExecuteAll(ctx context.Context, ses *gocql.Session, stmts ...Statement) (int64, error) {
 	return ExecuteAllWithSize(ctx, ses, 5, stmts...)
@@ -30,10 +26,10 @@ func ExecuteAllWithSize(ctx context.Context, ses *gocql.Session, size int, stmts
 			Args:       args,
 			Idempotent: true,
 		})
-		if i % size == 0 || i == l - 1 {
+		if i%size == 0 || i == l-1 {
 			err := ses.ExecuteBatch(batch)
 			if err != nil {
-				return int64(i + 1) , err
+				return int64(i + 1), err
 			}
 			batch = ses.NewBatch(gocql.UnloggedBatch).WithContext(ctx)
 		}
@@ -41,21 +37,21 @@ func ExecuteAllWithSize(ctx context.Context, ses *gocql.Session, size int, stmts
 	return int64(l), nil
 }
 
-func Insert(ses *gocql.Session, table string, model interface{}, options ...*Schema) (int64, error) {
+func Insert(ses *gocql.Session, table string, model interface{}, options ...*Schema) error {
 	return InsertWithVersion(ses, table, model, -1, options...)
 }
-func InsertWithVersion(ses *gocql.Session, table string, model interface{}, versionIndex int, options ...*Schema) (int64, error) {
+func InsertWithVersion(ses *gocql.Session, table string, model interface{}, versionIndex int, options ...*Schema) error {
 	query, values := BuildToInsertWithVersion(table, model, versionIndex, false, options...)
 	return Exec(ses, query, values...)
 }
-func Update(ses *gocql.Session, table string, model interface{}, options ...*Schema) (int64, error) {
+func Update(ses *gocql.Session, table string, model interface{}, options ...*Schema) error {
 	return UpdateWithVersion(ses, table, model, -1, options...)
 }
-func UpdateWithVersion(ses *gocql.Session, table string,  model interface{}, versionIndex int, options ...*Schema) (int64, error) {
+func UpdateWithVersion(ses *gocql.Session, table string, model interface{}, versionIndex int, options ...*Schema) error {
 	query, values := BuildToUpdateWithVersion(table, model, versionIndex, options...)
 	return Exec(ses, query, values...)
 }
-func Save(ses *gocql.Session, table string,  model interface{}, options ...*Schema) (int64, error) {
+func Save(ses *gocql.Session, table string, model interface{}, options ...*Schema) error {
 	query, values := BuildToSave(table, model, options...)
 	return Exec(ses, query, values...)
 }

@@ -83,7 +83,11 @@ func (s *Writer) Insert(ctx context.Context, model interface{}) (int64, error) {
 		return -1, err
 	}
 	defer ses.Close()
-	return Exec(ses, query, values...)
+	er2 := Exec(ses, query, values...)
+	if er2 == nil {
+		return 1, er2
+	}
+	return 0, er2
 }
 func (s *Writer) Update(ctx context.Context, model interface{}) (int64, error) {
 	var m interface{}
@@ -102,7 +106,11 @@ func (s *Writer) Update(ctx context.Context, model interface{}) (int64, error) {
 		return -1, err
 	}
 	defer ses.Close()
-	return Exec(ses, query, values...)
+	er2 := Exec(ses, query, values...)
+	if er2 == nil {
+		return 1, er2
+	}
+	return 0, er2
 }
 func (s *Writer) Save(ctx context.Context, model interface{}) (int64, error) {
 	var m interface{}
@@ -121,7 +129,11 @@ func (s *Writer) Save(ctx context.Context, model interface{}) (int64, error) {
 		return -1, err
 	}
 	defer ses.Close()
-	return Exec(ses, query, values...)
+	er2 := Exec(ses, query, values...)
+	if er2 == nil {
+		return 1, er2
+	}
+	return 0, er2
 }
 func (s *Writer) Patch(ctx context.Context, model map[string]interface{}) (int64, error) {
 	if s.Mapper != nil {
@@ -138,7 +150,11 @@ func (s *Writer) Patch(ctx context.Context, model map[string]interface{}) (int64
 		return -1, err
 	}
 	defer ses.Close()
-	return Exec(ses, query, values...)
+	er2 := Exec(ses, query, values...)
+	if er2 == nil {
+		return 1, er2
+	}
+	return 0, er2
 }
 func MapToDB(model *map[string]interface{}, modelType reflect.Type) {
 	for colName, value := range *model {
@@ -166,12 +182,18 @@ func (s *Writer) Delete(ctx context.Context, id interface{}) (int64, error) {
 		return -1, err
 	}
 	defer ses.Close()
-	return Exec(ses, sql, values...)
+	er2 := Exec(ses, sql, values...)
+	if er2 == nil {
+		return 1, er2
+	}
+	return 0, er2
 }
+
 type Mapper interface {
 	DbToModel(ctx context.Context, model interface{}) (interface{}, error)
 	ModelToDb(ctx context.Context, model interface{}) (interface{}, error)
 }
+
 func BuildQueryById(id interface{}, modelType reflect.Type, idName string) (query map[string]interface{}) {
 	columnName, _ := GetColumnName(modelType, idName)
 	return map[string]interface{}{columnName: id}

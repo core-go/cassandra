@@ -38,7 +38,11 @@ func (h *Handler) Exec(ctx echo.Context) error {
 		return err
 	}
 	defer session.Close()
-	res, er1 := c.Exec(session, s.Query, s.Params...)
+	er1 := c.Exec(session, s.Query, s.Params...)
+	res := 0
+	if er1 == nil {
+		res = 1
+	}
 	if er1 != nil {
 		handleError(ctx, http.StatusInternalServerError, er1.Error(), h.Error, er1)
 		return er1

@@ -17,7 +17,7 @@ type GRPCHandler struct {
 }
 
 func NewHandler(db *gocql.ClusterConfig, transform func(s string) string, logError func(context.Context, string)) *GRPCHandler {
-	g := GRPCHandler{ DB: db, Transform: transform, Error: logError }
+	g := GRPCHandler{DB: db, Transform: transform, Error: logError}
 	return &g
 }
 
@@ -85,11 +85,15 @@ func (s *GRPCHandler) Execute(ctx context.Context, in *grpc.Request) (*grpc.Resp
 		return &grpc.Response{Result: -1}, err
 	}
 	defer session.Close()
-	result, er1 := c.Exec(session, statement.Query, statement.Params...)
+	er1 := c.Exec(session, statement.Query, statement.Params...)
+	res := 0
+	if er1 == nil {
+		res = 1
+	}
 	if er1 != nil {
 		return &grpc.Response{Result: -1}, er1
 	}
-	return &grpc.Response{Result: result}, er1
+	return &grpc.Response{Result: res}, er1
 }
 
 func (s *GRPCHandler) ExecBatch(ctx context.Context, in *grpc.BatchRequest) (*grpc.Response, error) {

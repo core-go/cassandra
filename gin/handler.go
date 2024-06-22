@@ -38,7 +38,11 @@ func (h *Handler) Exec(ctx *gin.Context) {
 		return
 	}
 	defer session.Close()
-	res, er1 := c.Exec(session, s.Query, s.Params...)
+	er1 := c.Exec(session, s.Query, s.Params...)
+	res := 0
+	if er1 == nil {
+		res = 1
+	}
 	if er1 != nil {
 		handleError(ctx, 500, er1.Error(), h.Error, er1)
 		return

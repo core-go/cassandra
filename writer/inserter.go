@@ -8,50 +8,44 @@ import (
 	"github.com/gocql/gocql"
 )
 
-type Inserter struct {
+type Inserter[T any] struct {
 	db           *gocql.ClusterConfig
-	tableName    string
-	Map          func(ctx context.Context, model interface{}) (interface{}, error)
+	table        string
+	Map          func(T)
 	schema       *c.Schema
 	VersionIndex int
 }
 
-func NewInserterWithMap(db *gocql.ClusterConfig, tableName string, modelType reflect.Type, mp func(context.Context, interface{}) (interface{}, error), options ...int) *Inserter {
+func NewInserterWithMap[T any](db *gocql.ClusterConfig, tableName string, mp func(T), options ...int) *Inserter[T] {
 	versionIndex := -1
 	if len(options) > 0 && options[0] >= 0 {
 		versionIndex = options[0]
 	}
+	var t T
+	modelType := reflect.TypeOf(t)
+	if modelType.Kind() == reflect.Ptr {
+		modelType = modelType.Elem()
+	}
 	schema := c.CreateSchema(modelType)
-	return &Inserter{db: db, tableName: tableName, Map: mp, schema: schema, VersionIndex: versionIndex}
+	return &Inserter[T]{db: db, table: tableName, Map: mp, schema: schema, VersionIndex: versionIndex}
 }
 
-func NewInserter(db *gocql.ClusterConfig, tableName string, modelType reflect.Type, options ...func(ctx context.Context, model interface{}) (interface{}, error)) *Inserter {
-	var mp func(context.Context, interface{}) (interface{}, error)
+func NewInserter[T any](db *gocql.ClusterConfig, tableName string, options ...func(T)) *Inserter[T] {
+	var mp func(T)
 	if len(options) >= 1 {
 		mp = options[0]
 	}
-	return NewInserterWithMap(db, tableName, modelType, mp)
+	return NewInserterWithMap[T](db, tableName, mp)
 }
 
-func (w *Inserter) Write(ctx context.Context, model interface{}) error {
+func (w *Inserter[T]) Write(ctx context.Context, model T) error {
 	if w.Map != nil {
-		m2, er0 := w.Map(ctx, model)
-		if er0 != nil {
-			return er0
-		}
-		session, er0 := w.db.CreateSession()
-		if er0 != nil {
-			return er0
-		}
-		defer session.Close()
-		_, err := c.InsertWithVersion(session, w.tableName, m2, w.VersionIndex, w.schema)
-		return err
+		w.Map(model)
 	}
 	session, er0 := w.db.CreateSession()
 	if er0 != nil {
 		return er0
 	}
 	defer session.Close()
-	_, err := c.InsertWithVersion(session, w.tableName, model, w.VersionIndex, w.schema)
-	return err
+	return c.InsertWithVersion(session, w.table, model, w.VersionIndex, w.schema)
 }

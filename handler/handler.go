@@ -36,7 +36,11 @@ func (h *Handler) Exec(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer session.Close()
-	res, er1 := c.Exec(session, s.Query, s.Params...)
+	er1 := c.Exec(session, s.Query, s.Params...)
+	res := 0
+	if er1 == nil {
+		res = 1
+	}
 	if er1 != nil {
 		handleError(w, r, http.StatusInternalServerError, er1.Error(), h.Error, er1)
 		return
