@@ -16,7 +16,7 @@ type Inserter[T any] struct {
 	VersionIndex int
 }
 
-func NewInserterWithMap[T any](db *gocql.ClusterConfig, tableName string, mp func(T), options ...int) *Inserter[T] {
+func NewInserterWithMap[T any](db *gocql.ClusterConfig, table string, mp func(T), options ...int) *Inserter[T] {
 	versionIndex := -1
 	if len(options) > 0 && options[0] >= 0 {
 		versionIndex = options[0]
@@ -27,15 +27,15 @@ func NewInserterWithMap[T any](db *gocql.ClusterConfig, tableName string, mp fun
 		modelType = modelType.Elem()
 	}
 	schema := c.CreateSchema(modelType)
-	return &Inserter[T]{db: db, table: tableName, Map: mp, schema: schema, VersionIndex: versionIndex}
+	return &Inserter[T]{db: db, table: table, Map: mp, schema: schema, VersionIndex: versionIndex}
 }
 
-func NewInserter[T any](db *gocql.ClusterConfig, tableName string, options ...func(T)) *Inserter[T] {
+func NewInserter[T any](db *gocql.ClusterConfig, table string, options ...func(T)) *Inserter[T] {
 	var mp func(T)
 	if len(options) >= 1 {
 		mp = options[0]
 	}
-	return NewInserterWithMap[T](db, tableName, mp)
+	return NewInserterWithMap[T](db, table, mp)
 }
 
 func (w *Inserter[T]) Write(ctx context.Context, model T) error {

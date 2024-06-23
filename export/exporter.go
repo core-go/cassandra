@@ -2,7 +2,6 @@ package export
 
 import (
 	"context"
-	c "github.com/core-go/cassandra"
 	"github.com/gocql/gocql"
 	"reflect"
 )
@@ -35,7 +34,7 @@ func NewExporter[T any](db *gocql.ClusterConfig,
 	if modelType.Kind() == reflect.Ptr {
 		modelType = modelType.Elem()
 	}
-	fieldsIndex, err := c.GetColumnIndexes(modelType)
+	fieldsIndex, err := GetColumnIndexes(modelType)
 	if err != nil {
 		return nil, err
 	}
@@ -68,12 +67,12 @@ func (s *Exporter[T]) Export(ctx context.Context) (int64, error) {
 
 func (s *Exporter[T]) ScanAndWrite(ctx context.Context, iter *gocql.Iter) (int64, error) {
 	defer s.Close()
-	columns := c.GetColumns(iter.Columns())
+	columns := GetColumns(iter.Columns())
 	var i int64
 	i = 0
 	for {
 		var obj T
-		r := c.StructScan(&obj, columns, s.Map, -1)
+		r := StructScan(&obj, columns, s.Map, -1)
 		if !iter.Scan(r...) {
 			return i, nil
 		} else {

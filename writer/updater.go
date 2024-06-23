@@ -10,20 +10,20 @@ import (
 
 type Updater[T any] struct {
 	db           *gocql.ClusterConfig
-	tableName    string
+	table        string
 	Map          func(T)
 	VersionIndex int
 	schema       *c.Schema
 }
 
-func NewUpdater[T any](db *gocql.ClusterConfig, tableName string, options ...func(T)) *Updater[T] {
+func NewUpdater[T any](db *gocql.ClusterConfig, table string, options ...func(T)) *Updater[T] {
 	var mp func(T)
 	if len(options) >= 1 {
 		mp = options[0]
 	}
-	return NewUpdaterWithVersion[T](db, tableName, mp)
+	return NewUpdaterWithVersion[T](db, table, mp)
 }
-func NewUpdaterWithVersion[T any](db *gocql.ClusterConfig, tableName string, mp func(T), options ...int) *Updater[T] {
+func NewUpdaterWithVersion[T any](db *gocql.ClusterConfig, table string, mp func(T), options ...int) *Updater[T] {
 	version := -1
 	if len(options) > 0 && options[0] >= 0 {
 		version = options[0]
@@ -34,7 +34,7 @@ func NewUpdaterWithVersion[T any](db *gocql.ClusterConfig, tableName string, mp 
 		modelType = modelType.Elem()
 	}
 	schema := c.CreateSchema(modelType)
-	return &Updater[T]{db: db, tableName: tableName, VersionIndex: version, schema: schema, Map: mp}
+	return &Updater[T]{db: db, table: table, VersionIndex: version, schema: schema, Map: mp}
 }
 
 func (w *Updater[T]) Write(ctx context.Context, model T) error {
@@ -46,5 +46,5 @@ func (w *Updater[T]) Write(ctx context.Context, model T) error {
 		return er0
 	}
 	defer session.Close()
-	return c.UpdateWithVersion(session, w.tableName, model, w.VersionIndex, w.schema)
+	return c.UpdateWithVersion(session, w.table, model, w.VersionIndex, w.schema)
 }

@@ -16,6 +16,7 @@ func InitFields(modelType reflect.Type) (map[string]int, string, error) {
 	fields := BuildFields(modelType)
 	return fieldsIndex, fields, nil
 }
+
 type Loader struct {
 	DB                *gocql.ClusterConfig
 	BuildParam        func(i int) string
@@ -73,7 +74,7 @@ func (s *Loader) All(ctx context.Context) (interface{}, error) {
 }
 
 func (s *Loader) Load(ctx context.Context, id interface{}) (interface{}, error) {
-	queryFindById, values := BuildFindById(s.query, s.BuildParam, id, s.mapJsonColumnKeys, s.keys)
+	queryFindById, values := BuildFindById(s.query, id, s.mapJsonColumnKeys, s.keys)
 	ses, err := s.DB.CreateSession()
 	if err != nil {
 		return nil, err
@@ -105,7 +106,7 @@ func (s *Loader) LoadAndDecode(ctx context.Context, id interface{}, result inter
 }
 
 func (s *Loader) Get(ctx context.Context, id interface{}, result interface{}) (bool, error) {
-	queryFindById, values := BuildFindById(s.query, s.BuildParam, id, s.mapJsonColumnKeys, s.keys)
+	queryFindById, values := BuildFindById(s.query, id, s.mapJsonColumnKeys, s.keys)
 	ses, err := s.DB.CreateSession()
 	if err != nil {
 		return false, err
@@ -215,7 +216,8 @@ func BuildSelectAllQuery(table string) string {
 	return fmt.Sprintf("select * from %v", table)
 }
 
-func BuildFindById(query string, buildParam func(i int) string, id interface{}, mapJsonColumnKeys map[string]string, keys []string) (string, []interface{}) {
+func BuildFindById(query string, id interface{}, mapJsonColumnKeys map[string]string, keys []string) (string, []interface{}) {
+	buildParam := BuildParam
 	var where = ""
 	var values []interface{}
 	if len(keys) == 1 {

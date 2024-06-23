@@ -8,59 +8,49 @@ import (
 	"github.com/gocql/gocql"
 )
 
-type BatchInserter struct {
+type BatchInserter[T any] struct {
 	db           *gocql.ClusterConfig
-	tableName    string
-	Map          func(ctx context.Context, model interface{}) (interface{}, error)
+	table        string
+	Map          func(*T)
 	VersionIndex int
 	Schema       *c.Schema
 }
 
-func NewBatchInserter(db *gocql.ClusterConfig, tableName string, modelType reflect.Type, options ...func(context.Context, interface{}) (interface{}, error)) *BatchInserter {
-	var mp func(context.Context, interface{}) (interface{}, error)
+func NewBatchInserter[T any](db *gocql.ClusterConfig, table string, options ...func(*T)) *BatchInserter[T] {
+	var mp func(*T)
 	if len(options) > 0 && options[0] != nil {
 		mp = options[0]
 	}
-	return NewBatchInserterWithVersion(db, tableName, modelType, mp)
+	return NewBatchInserterWithVersion[T](db, table, mp)
 }
-func NewBatchInserterWithVersion(db *gocql.ClusterConfig, tableName string, modelType reflect.Type, mp func(context.Context, interface{}) (interface{}, error), options ...int) *BatchInserter {
+func NewBatchInserterWithVersion[T any](db *gocql.ClusterConfig, table string, mp func(*T), options ...int) *BatchInserter[T] {
+	var t T
+	modelType := reflect.TypeOf(t)
+	if modelType.Kind() != reflect.Struct {
+		panic("T must be a struct")
+	}
 	versionIndex := -1
 	if len(options) > 0 && options[0] >= 0 {
 		versionIndex = options[0]
 	}
 	schema := c.CreateSchema(modelType)
-	return &BatchInserter{db: db, tableName: tableName, Schema: schema, VersionIndex: versionIndex, Map: mp}
+	return &BatchInserter[T]{db: db, table: table, Schema: schema, VersionIndex: versionIndex, Map: mp}
 }
-func (w *BatchInserter) Write(ctx context.Context, models interface{}) ([]int, []int, error) {
-	successIndices := make([]int, 0)
-	failIndices := make([]int, 0)
-	var models2 interface{}
-	var er0 error
+func (w *BatchInserter[T]) Write(ctx context.Context, models []T) error {
+	l := len(models)
+	if l == 0 {
+		return nil
+	}
 	if w.Map != nil {
-		models2, er0 = c.MapModels(ctx, models, w.Map)
-		if er0 != nil {
-			s0 := reflect.ValueOf(models2)
-			_, er0b := c.InterfaceSlice(models2)
-			failIndices = c.ToArrayIndex(s0, failIndices)
-			return successIndices, failIndices, er0b
+		for i := 0; i < l; i++ {
+			w.Map(&models[i])
 		}
-	} else {
-		models2 = models
 	}
 	session, er0 := w.db.CreateSession()
 	if er0 != nil {
-		return successIndices, failIndices, er0
+		return er0
 	}
 	defer session.Close()
-	_, err := c.InsertBatchWithVersion(ctx, session, w.tableName, models2, w.VersionIndex, w.Schema)
-	s := reflect.ValueOf(models)
-	if err == nil {
-		// Return full success
-		successIndices = c.ToArrayIndex(s, successIndices)
-		return successIndices, failIndices, err
-	} else {
-		// Return full fail
-		failIndices = c.ToArrayIndex(s, failIndices)
-	}
-	return successIndices, failIndices, err
+	_, err := c.InsertBatchWithSizeAndVersion(ctx, session, l, w.table, models, w.VersionIndex, w.Schema)
+	return err
 }

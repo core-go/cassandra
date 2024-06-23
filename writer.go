@@ -29,9 +29,6 @@ type Writer struct {
 	versionIndex   int
 	versionDBField string
 	schema         *Schema
-	BoolSupport    bool
-	Rollback       bool
-	Driver         string
 }
 
 func NewWriter(db *gocql.ClusterConfig, tableName string, modelType reflect.Type, options ...Mapper) (*Writer, error) {
@@ -61,10 +58,10 @@ func NewWriterWithVersion(db *gocql.ClusterConfig, tableName string, modelType r
 			if !exist {
 				dbFieldName = strings.ToLower(versionField)
 			}
-			return &Writer{Loader: loader, Rollback: true, schema: schema, Mapper: mapper, jsonColumnMap: jsonColumnMap, versionField: versionField, versionIndex: index, versionDBField: dbFieldName}, nil
+			return &Writer{Loader: loader, schema: schema, Mapper: mapper, jsonColumnMap: jsonColumnMap, versionField: versionField, versionIndex: index, versionDBField: dbFieldName}, nil
 		}
 	}
-	return &Writer{Loader: loader, Rollback: true, schema: schema, Mapper: mapper, jsonColumnMap: jsonColumnMap, versionField: versionField, versionIndex: -1}, nil
+	return &Writer{Loader: loader, schema: schema, Mapper: mapper, jsonColumnMap: jsonColumnMap, versionField: versionField, versionIndex: -1}, nil
 }
 func (s *Writer) Insert(ctx context.Context, model interface{}) (int64, error) {
 	var m interface{}
@@ -296,6 +293,20 @@ func JSONToColumns(model map[string]interface{}, m map[string]string) map[string
 	}
 	return r
 }
+func GetWritableColumns(fields map[string]*FieldDB, jsonColumnMap map[string]string) map[string]string {
+	m := jsonColumnMap
+	for k, v := range jsonColumnMap {
+		for _, db := range fields {
+			if db.Column == v {
+				if db.Update == false && db.Key == false {
+					delete(m, k)
+				}
+			}
+		}
+	}
+	return m
+}
+
 func Contains(s []string, str string) bool {
 	for _, v := range s {
 		if v == str {
