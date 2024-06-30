@@ -9,7 +9,7 @@ import (
 )
 
 type SearchAdapter[T any, K any, F any] struct {
-	*GenericAdapter[T, K]
+	*Adapter[T, K]
 	BuildQuery func(F) (string, []interface{})
 	Mp         func(*T)
 	Map        map[string]int
@@ -19,7 +19,7 @@ func NewSearchAdapter[T any, K any, F any](db *gocql.ClusterConfig, table string
 	return NewSearchAdapterWithVersion[T, K, F](db, table, buildQuery, "", options...)
 }
 func NewSearchAdapterWithVersion[T any, K any, F any](db *gocql.ClusterConfig, table string, buildQuery func(F) (string, []interface{}), versionField string, opts ...func(*T)) (*SearchAdapter[T, K, F], error) {
-	adapter, err := NewGenericAdapterWithVersion[T, K](db, table, versionField)
+	adapter, err := NewAdapterWithVersion[T, K](db, table, versionField)
 	if err != nil {
 		return nil, err
 	}
@@ -36,7 +36,7 @@ func NewSearchAdapterWithVersion[T any, K any, F any](db *gocql.ClusterConfig, t
 	if err != nil {
 		return nil, err
 	}
-	builder := &SearchAdapter[T, K, F]{GenericAdapter: adapter, Map: fieldsIndex, BuildQuery: buildQuery, Mp: mp}
+	builder := &SearchAdapter[T, K, F]{Adapter: adapter, Map: fieldsIndex, BuildQuery: buildQuery, Mp: mp}
 	return builder, nil
 }
 

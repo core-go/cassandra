@@ -81,6 +81,7 @@ func (s *Exporter[T]) ScanAndWrite(ctx context.Context, iter *gocql.Iter) (int64
 				return i, er1
 			}
 		}
+		i = i + 1
 	}
 }
 

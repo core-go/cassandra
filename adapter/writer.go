@@ -9,7 +9,7 @@ import (
 	q "github.com/core-go/cassandra"
 )
 
-type Adapter[T any] struct {
+type Writer[T any] struct {
 	DB             *gocql.ClusterConfig
 	Table          string
 	Schema         *q.Schema
@@ -19,10 +19,10 @@ type Adapter[T any] struct {
 	versionDBField string
 }
 
-func NewAdapter[T any](db *gocql.ClusterConfig, tableName string) (*Adapter[T], error) {
-	return NewAdapterWithVersion[T](db, tableName, "")
+func NewWriter[T any](db *gocql.ClusterConfig, tableName string) (*Writer[T], error) {
+	return NewWriterWithVersion[T](db, tableName, "")
 }
-func NewAdapterWithVersion[T any](db *gocql.ClusterConfig, tableName string, versionField string) (*Adapter[T], error) {
+func NewWriterWithVersion[T any](db *gocql.ClusterConfig, tableName string, versionField string) (*Writer[T], error) {
 	var t T
 	modelType := reflect.TypeOf(t)
 	if modelType.Kind() == reflect.Ptr {
@@ -31,7 +31,7 @@ func NewAdapterWithVersion[T any](db *gocql.ClusterConfig, tableName string, ver
 	schema := q.CreateSchema(modelType)
 	jsonColumnMapT := q.MakeJsonColumnMap(modelType)
 	jsonColumnMap := q.GetWritableColumns(schema.Fields, jsonColumnMapT)
-	adapter := &Adapter[T]{DB: db, Table: tableName, Schema: schema, JsonColumnMap: jsonColumnMap, versionField: "", versionIndex: -1}
+	adapter := &Writer[T]{DB: db, Table: tableName, Schema: schema, JsonColumnMap: jsonColumnMap, versionField: "", versionIndex: -1}
 	if len(versionField) > 0 {
 		index := q.FindFieldIndex(modelType, versionField)
 		if index >= 0 {
@@ -47,7 +47,7 @@ func NewAdapterWithVersion[T any](db *gocql.ClusterConfig, tableName string, ver
 	return adapter, nil
 }
 
-func (a *Adapter[T]) Create(ctx context.Context, model T) (int64, error) {
+func (a *Writer[T]) Create(ctx context.Context, model T) (int64, error) {
 	query, args := q.BuildToInsertWithVersion(a.Table, model, a.versionIndex, false, a.Schema)
 	ses, err := a.DB.CreateSession()
 	if err != nil {
@@ -60,7 +60,7 @@ func (a *Adapter[T]) Create(ctx context.Context, model T) (int64, error) {
 	}
 	return 1, nil
 }
-func (a *Adapter[T]) Update(ctx context.Context, model T) (int64, error) {
+func (a *Writer[T]) Update(ctx context.Context, model T) (int64, error) {
 	query, args := q.BuildToUpdateWithVersion(a.Table, model, a.versionIndex, a.Schema)
 	ses, err := a.DB.CreateSession()
 	if err != nil {
@@ -73,7 +73,7 @@ func (a *Adapter[T]) Update(ctx context.Context, model T) (int64, error) {
 	}
 	return 1, nil
 }
-func (a *Adapter[T]) Save(ctx context.Context, model T) (int64, error) {
+func (a *Writer[T]) Save(ctx context.Context, model T) (int64, error) {
 	query, args := q.BuildToInsertWithVersion(a.Table, model, a.versionIndex, true, a.Schema)
 	ses, err := a.DB.CreateSession()
 	if err != nil {
@@ -86,7 +86,7 @@ func (a *Adapter[T]) Save(ctx context.Context, model T) (int64, error) {
 	}
 	return 1, nil
 }
-func (a *Adapter[T]) Patch(ctx context.Context, model map[string]interface{}) (int64, error) {
+func (a *Writer[T]) Patch(ctx context.Context, model map[string]interface{}) (int64, error) {
 	dbColumnMap := q.JSONToColumns(model, a.JsonColumnMap)
 	query, values := q.BuildToPatchWithVersion(a.Table, dbColumnMap, a.Schema.SKeys, a.versionDBField)
 	ses, err := a.DB.CreateSession()
