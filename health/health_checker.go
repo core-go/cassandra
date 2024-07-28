@@ -3,7 +3,7 @@ package health
 import (
 	"context"
 	"errors"
-	"github.com/gocql/gocql"
+	"github.com/apache/cassandra-gocql-driver"
 	"time"
 )
 

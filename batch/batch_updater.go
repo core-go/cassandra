@@ -4,8 +4,8 @@ import (
 	"context"
 	"reflect"
 
+	"github.com/apache/cassandra-gocql-driver"
 	c "github.com/core-go/cassandra"
-	"github.com/gocql/gocql"
 )
 
 type BatchUpdater[T any] struct {

@@ -3,8 +3,8 @@ package echo
 import (
 	"context"
 	"encoding/json"
+	"github.com/apache/cassandra-gocql-driver"
 	c "github.com/core-go/cassandra"
-	"github.com/gocql/gocql"
 	"github.com/labstack/echo/v4"
 	"net/http"
 )

@@ -2,7 +2,7 @@ package dao
 
 import (
 	"context"
-	"github.com/gocql/gocql"
+	"github.com/apache/cassandra-gocql-driver"
 	"reflect"
 	"strings"
 

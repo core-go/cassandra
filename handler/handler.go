@@ -3,8 +3,8 @@ package handler
 import (
 	"context"
 	"encoding/json"
+	"github.com/apache/cassandra-gocql-driver"
 	c "github.com/core-go/cassandra"
-	"github.com/gocql/gocql"
 	"net/http"
 )
 

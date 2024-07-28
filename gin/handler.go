@@ -3,9 +3,9 @@ package echo
 import (
 	"context"
 	"encoding/json"
+	"github.com/apache/cassandra-gocql-driver"
 	c "github.com/core-go/cassandra"
 	"github.com/gin-gonic/gin"
-	"github.com/gocql/gocql"
 	"net/http"
 )
 

@@ -2,7 +2,7 @@ package adapter
 
 import (
 	"context"
-	"github.com/gocql/gocql"
+	"github.com/apache/cassandra-gocql-driver"
 	"reflect"
 
 	q "github.com/core-go/cassandra"

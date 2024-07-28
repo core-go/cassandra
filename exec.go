@@ -2,7 +2,7 @@ package cassandra
 
 import (
 	"context"
-	"github.com/gocql/gocql"
+	"github.com/apache/cassandra-gocql-driver"
 )
 
 func Exec(ses *gocql.Session, query string, values ...interface{}) error {

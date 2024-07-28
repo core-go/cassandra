@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gocql/gocql"
+	"github.com/apache/cassandra-gocql-driver"
 )
 
 type PasscodeRepository struct {
@@ -16,6 +16,7 @@ type PasscodeRepository struct {
 	passcodeName  string
 	expiredAtName string
 }
+
 func NewPasscodeAdapter(db *gocql.ClusterConfig, tableName string, options ...string) *PasscodeRepository {
 	return NewPasscodeRepository(db, tableName, options...)
 }

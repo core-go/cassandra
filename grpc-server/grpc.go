@@ -4,9 +4,9 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"github.com/apache/cassandra-gocql-driver"
 	c "github.com/core-go/cassandra"
 	"github.com/core-go/cassandra/grpc"
-	"github.com/gocql/gocql"
 )
 
 type GRPCHandler struct {

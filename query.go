@@ -5,7 +5,7 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/gocql/gocql"
+	"github.com/apache/cassandra-gocql-driver"
 )
 
 func QueryMap(ses *gocql.Session, transform func(s string) string, sql string, values ...interface{}) ([]map[string]interface{}, error) {
@@ -44,7 +44,7 @@ func QueryMap(ses *gocql.Session, transform func(s string) string, sql string, v
 		}
 	}
 }
-func ScanMap(m map[string]interface{}, iter *gocql.Iter, rowData gocql.RowData, newCols[]string) bool {
+func ScanMap(m map[string]interface{}, iter *gocql.Iter, rowData gocql.RowData, newCols []string) bool {
 	for i, col := range rowData.Columns {
 		if dest, ok := m[col]; ok {
 			rowData.Values[i] = dest
@@ -72,7 +72,7 @@ func Query(ses *gocql.Session, fieldsIndex map[string]int, results interface{}, 
 	}
 	return ScanIter(q.Iter(), results, fieldsIndex)
 }
-func QueryWithPage(ses *gocql.Session, fieldsIndex map[string]int, results interface{}, max int64, refId string, sql string, values...interface{}) (string, error) {
+func QueryWithPage(ses *gocql.Session, fieldsIndex map[string]int, results interface{}, max int64, refId string, sql string, values ...interface{}) (string, error) {
 	next, er0 := hex.DecodeString(refId)
 	if er0 != nil {
 		return "", er0

@@ -2,8 +2,8 @@ package query
 
 import (
 	"context"
+	"github.com/apache/cassandra-gocql-driver"
 	q "github.com/core-go/cassandra"
-	"github.com/gocql/gocql"
 	"reflect"
 )
 

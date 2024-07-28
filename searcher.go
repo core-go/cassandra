@@ -2,13 +2,14 @@ package cassandra
 
 import (
 	"context"
-	"github.com/gocql/gocql"
+	"github.com/apache/cassandra-gocql-driver"
 	"reflect"
 )
 
 type Searcher struct {
-	search  func(ctx context.Context, searchModel interface{}, results interface{}, limit int64, nextPageToken string) (string, error)
+	search func(ctx context.Context, searchModel interface{}, results interface{}, limit int64, nextPageToken string) (string, error)
 }
+
 func NewSearcher(search func(context.Context, interface{}, interface{}, int64, string) (string, error)) *Searcher {
 	return &Searcher{search: search}
 }

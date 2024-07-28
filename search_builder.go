@@ -6,7 +6,7 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/gocql/gocql"
+	"github.com/apache/cassandra-gocql-driver"
 )
 
 const (
@@ -21,6 +21,7 @@ type SearchBuilder struct {
 	Map         func(ctx context.Context, model interface{}) (interface{}, error)
 	fieldsIndex map[string]int
 }
+
 func NewSearchQuery(db *gocql.ClusterConfig, modelType reflect.Type, buildQuery func(interface{}) (string, []interface{}), options ...func(context.Context, interface{}) (interface{}, error)) (*SearchBuilder, error) {
 	return NewSearchBuilder(db, modelType, buildQuery, options...)
 }
@@ -48,7 +49,7 @@ func (b *SearchBuilder) Search(ctx context.Context, m interface{}, results inter
 	nextPageToken, er2 := QueryWithMap(ses, b.fieldsIndex, results, sql, params, limit, refId, b.Map)
 	return nextPageToken, er2
 }
-func QueryWithMap(ses *gocql.Session, fieldsIndex map[string]int, results interface{}, sql string, values []interface{}, max int64, refId string, options...func(context.Context, interface{}) (interface{}, error)) (string, error) {
+func QueryWithMap(ses *gocql.Session, fieldsIndex map[string]int, results interface{}, sql string, values []interface{}, max int64, refId string, options ...func(context.Context, interface{}) (interface{}, error)) (string, error) {
 	var mp func(context.Context, interface{}) (interface{}, error)
 	if len(options) > 0 && options[0] != nil {
 		mp = options[0]

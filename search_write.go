@@ -1,7 +1,7 @@
 package cassandra
 
 import (
-	"github.com/gocql/gocql"
+	"github.com/apache/cassandra-gocql-driver"
 	"reflect"
 )
 
@@ -22,21 +22,21 @@ func NewSearchWriterWithVersionAndMap(db *gocql.ClusterConfig, tableName string,
 		return searcher, writer, er1
 	}
 }
-func NewSearchWriterWithVersion(db *gocql.ClusterConfig, tableName string, modelType reflect.Type, buildQuery func(interface{}) (string, []interface{}), versionField string, options...Mapper) (*Searcher, *Writer, error) {
+func NewSearchWriterWithVersion(db *gocql.ClusterConfig, tableName string, modelType reflect.Type, buildQuery func(interface{}) (string, []interface{}), versionField string, options ...Mapper) (*Searcher, *Writer, error) {
 	var mapper Mapper
 	if len(options) > 0 {
 		mapper = options[0]
 	}
 	return NewSearchWriterWithVersionAndMap(db, tableName, modelType, buildQuery, versionField, mapper)
 }
-func NewSearchWriterWithMap(db *gocql.ClusterConfig, tableName string, modelType reflect.Type, buildQuery func(interface{}) (string, []interface{}), mapper Mapper, options...string) (*Searcher, *Writer, error) {
+func NewSearchWriterWithMap(db *gocql.ClusterConfig, tableName string, modelType reflect.Type, buildQuery func(interface{}) (string, []interface{}), mapper Mapper, options ...string) (*Searcher, *Writer, error) {
 	var versionField string
 	if len(options) > 0 {
 		versionField = options[0]
 	}
 	return NewSearchWriterWithVersionAndMap(db, tableName, modelType, buildQuery, versionField, mapper)
 }
-func NewSearchWriter(db *gocql.ClusterConfig, tableName string, modelType reflect.Type, buildQuery func(interface{}) (string, []interface{}), pageState string, options...Mapper) (*Searcher, *Writer, error) {
+func NewSearchWriter(db *gocql.ClusterConfig, tableName string, modelType reflect.Type, buildQuery func(interface{}) (string, []interface{}), pageState string, options ...Mapper) (*Searcher, *Writer, error) {
 	var mapper Mapper
 	if len(options) > 0 {
 		mapper = options[0]
